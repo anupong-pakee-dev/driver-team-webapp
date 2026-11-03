@@ -2,10 +2,17 @@ import "server-only";
 import { Pool, type PoolClient } from "pg";
 
 // ใช้ pool เดียวต่อ process (dev hot-reload ไม่สร้างซ้ำ)
+// Supabase cloud: DATABASE_CA_CERT = เนื้อไฟล์ CA ของ project (Dashboard → Database → SSL Configuration)
+//   → เข้ารหัส + ตรวจ cert · ไม่ตั้ง (local) = ตาม DATABASE_URL
+const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, "\n").trim();
 const g = globalThis as unknown as { __pgPool?: Pool };
 export const pool: Pool =
   g.__pgPool ??
-  (g.__pgPool = new Pool({ connectionString: process.env.DATABASE_URL, max: Number(process.env.DB_POOL_MAX) || 10 }));
+  (g.__pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.DB_POOL_MAX) || 10,
+    ...(ca ? { ssl: { ca } } : {}),
+  }));
 
 // connection ที่ว่างอยู่หลุด (DB restart / failover) → ไม่ให้ทั้ง process ล้ม
 if (!(pool as unknown as { __errHandler?: boolean }).__errHandler) {

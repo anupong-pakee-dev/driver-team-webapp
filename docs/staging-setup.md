@@ -115,6 +115,7 @@ node -e "const c=require('crypto');for(const k of ['SESSION_SECRET','FIELD_ENCRY
 | `SESSION_SECRET` `FIELD_ENCRYPTION_KEY` `PHONE_HASH_KEY` `CRON_SECRET` | จากข้อ 2 |
 | `FIELD_ENCRYPTION_KEY_VERSION` | `1` |
 | `DB_POOL_MAX` | `3` |
+| `DATABASE_CA_CERT` | Supabase → Database → **SSL Configuration → Download certificate** → เปิดไฟล์ `.crt` ด้วย Notepad → คัดลอกทั้งหมด (รวมบรรทัด `-----BEGIN/END CERTIFICATE-----`) · ไม่ใส่ = ต่อฐานข้อมูลแบบไม่เข้ารหัส |
 
 **อย่าใส่** `DEV_LOGIN` / `DEV_SEED_PASSWORD`
 
