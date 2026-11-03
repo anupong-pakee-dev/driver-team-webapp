@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth";
-import { asUser } from "@/lib/db";
+import { asUser, pool } from "@/lib/db";
 import { formatBangkok } from "@/lib/time";
 import { Badge, Empty, Panel } from "@/components/ui";
 import { RetryOutbox } from "./retry";
@@ -20,10 +20,15 @@ export default async function SystemPage() {
          from job_runs j order by name, started desc`)).rows,
     outbox: (await db.query(
       `select o.id, o.topic, o.status, o.attempts, o.last_error, o.created_at, o.payload->'messages'->0->>'text' as text,
-              o.payload->'messages'->0->>'altText' as alt, u.display_name, u.role
-         from outbox o left join users u on u.line_user_id = o.payload->>'to'
-        where o.status in ('failed','dead') order by o.created_at desc limit 100`)).rows,
+              o.payload->'messages'->0->>'altText' as alt, o.payload->>'to' as to
+         from outbox o where o.status in ('failed','dead') order by o.created_at desc limit 100`)).rows,
   }));
+  // line_user_id ไม่เปิดให้ role authenticated อ่าน (RLS column grant) → หาชื่อผู้รับฝั่งเซิร์ฟเวอร์หลังตรวจสิทธิ์ staff แล้ว
+  const to = [...new Set(d.outbox.map((o) => o.to).filter(Boolean))];
+  const recipients = new Map(to.length
+    ? (await pool.query(`select line_user_id, display_name, role from users where line_user_id = any($1)`, [to])).rows.map((u) => [u.line_user_id, u])
+    : []);
+  for (const o of d.outbox) Object.assign(o, { display_name: recipients.get(o.to)?.display_name, role: recipients.get(o.to)?.role });
 
   return (
     <div className="space-y-4">
