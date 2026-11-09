@@ -78,8 +78,8 @@ tests/unit              Vitest
 ### เฟส 3 (ราคา/ใบเสนอราคา)
 
 - `npm run seed:demo` (local เท่านั้น) สร้างคนขับ+รถ 3 คันที่รับงานได้ และตั้ง `allowed_registrations` / `license_coverage` / `bg_check_valid_years` เป็น**ค่าสาธิต** — เพราะแคตตาล็อกแสดงเฉพาะประเภทที่มีรถพร้อม (FR-CAT-01)
-- ไม่มี `GOOGLE_MAPS_SERVER_KEY` บน local → ค้นสถานที่จากรายการตัวอย่าง และคำนวณระยะ = เส้นตรง × 1.35 · production ไม่มี key → แอดมินกรอกระยะเอง (`distance_source = manual`)
-- สนามบินกำหนดใน settings `airports` — **ต้องใส่ Google place_id จริงก่อนใช้ Routes API**
+- **ตำแหน่งไม่ใช้ API แผนที่ที่มีค่าใช้จ่าย**: ลูกค้าระบุเองด้วย GPS มือถือ / ปักหมุดบนแผนที่ OpenStreetMap (Leaflet) / วางลิงก์หรือพิกัดจาก Google Maps (เซิร์ฟเวอร์ตามลิงก์ย่อ maps.app.goo.gl เพื่อหาพิกัด) · ระยะทาง = ระยะเส้นตรงผ่านทุกจุด × `route_estimate.road_factor` (1.35) · เวลา = ระยะ ÷ `avg_kmh` (50) → `distance_source = estimate` · แอดมินกรอกระยะเองได้ (`manual`) · คนขับนำทางด้วยปุ่ม Google Maps / Waze จากพิกัด
+- สนามบินกำหนดใน settings `airports` (ใช้ lat/lng) — ตรวจพิกัดให้ตรงอาคารผู้โดยสาร
 - ตารางเทคนิคเพิ่ม `route_cache` (cache ระยะ 7 วัน) → รวม 36 ตาราง · `quotes` เพิ่ม `notes`, `hours`, `discount_requested_by`, `reminded_at`
 - แก้ราคา = ปิดกฎเดิม + เพิ่มกฎใหม่ (exclusion constraint กันกฎซ้อน) → ใบเสนอราคาเดิมยังอ้างราคาเดิม · ใบเสนอราคาที่ส่งแล้วแก้ราคาทับไม่ได้ (trigger)
 - ส่วนลดเกินเพดานของแอดมิน = ออก revision ใหม่สถานะ `pending_approval` ฉบับเดิมยังใช้ได้จนเจ้าของอนุมัติ

@@ -88,8 +88,16 @@ export async function bookAndPay(c: APIRequestContext, body: Record<string, unkn
   return { bookingId: a.booking_id, quote: qt };
 }
 
+// ตำแหน่งที่ลูกค้าส่งมา (GPS / ปักหมุด / ลิงก์) — พิกัดจริงโดยประมาณ
+export const PLACES = {
+  asok: { lat: 13.737, lng: 100.5603, name: "สุขุมวิท อโศก", source: "pin" },
+  siam: { lat: 13.7462, lng: 100.5347, name: "สยามพารากอน", source: "link" },
+  silom: { lat: 13.729, lng: 100.534, name: "สีลม", source: "gps" },
+  huahin: { lat: 12.5684, lng: 99.9577, name: "หัวหิน", source: "pin" },
+} as const;
+
 export const airport = (car: string, pickup_at: string) => ({
-  service_type: "airport_transfer", car_type: car, destination_place_id: "stub:asok", pickup_at,
+  service_type: "airport_transfer", car_type: car, destination: PLACES.asok, pickup_at,
   pax: 2, luggage: 2, child_seats: 0, flight: { no: "TG123", airport: "BKK", direction: "arrival" },
 });
 

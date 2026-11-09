@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { QuoteFormOptions } from "@/services/quoteForm";
 import { formatBaht } from "@/lib/money";
-import { PlaceInput, type PickedPlace } from "./PlaceInput";
+import { LocationInput, type PickedPlace } from "./LocationInput";
 import { btnPrimary, btnSecondary, input } from "./ui";
 
 const RULE_TH: Record<string, string> = {
@@ -24,14 +24,15 @@ const SOURCES = [
 
 type Customer = { id: string; label: string };
 
+const point = (p: PickedPlace | null) => (p ? { lat: p.lat, lng: p.lng, name: p.name.trim() || undefined, source: p.source } : undefined);
+
 export function QuoteForm({
-  mode, options, initialService, initialCar, sessionToken, idempotencyKey, minPickup, customers = [],
+  mode, options, initialService, initialCar, idempotencyKey, minPickup, customers = [],
 }: {
   mode: "customer" | "staff";
   options: QuoteFormOptions;
   initialService?: string;
   initialCar?: string;
-  sessionToken: string;
   idempotencyKey: string;
   /** datetime-local ขั้นต่ำ (เวลาไทย) คำนวณฝั่ง server */
   minPickup: string;
@@ -75,9 +76,10 @@ export function QuoteForm({
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const local: string[] = [];
-    if (isAirport && !destination && direction === "arrival") local.push("กรุณาเลือกจุดส่ง");
-    if (isAirport && !origin && direction === "departure") local.push("กรุณาเลือกจุดรับ");
-    if (!isAirport && !origin) local.push("กรุณาเลือกจุดรับ");
+    if (isAirport && !destination && direction === "arrival") local.push("กรุณาระบุตำแหน่งจุดส่ง");
+    if (isAirport && !origin && direction === "departure") local.push("กรุณาระบุตำแหน่งจุดรับ");
+    if (!isAirport && !origin) local.push("กรุณาระบุตำแหน่งจุดรับ");
+    if (stops.some((s) => !s)) local.push("กรุณาระบุตำแหน่งจุดแวะให้ครบ หรือลบจุดที่ไม่ใช้");
     if (!isAirport && !isCharter && !destination) local.push(RULE_TH.DESTINATION_REQUIRED);
     if (isAirport && !noFlight && !flightNo.trim()) local.push(RULE_TH.FLIGHT_REQUIRED);
     if (mode === "staff" && !customerId) local.push("กรุณาเลือกลูกค้า");
@@ -87,9 +89,9 @@ export function QuoteForm({
       ...(mode === "staff" ? { customer_id: customerId } : {}),
       service_type: service,
       car_type: car,
-      origin_place_id: isAirport && direction === "arrival" ? undefined : origin?.place_id,
-      destination_place_id: isAirport && direction === "departure" ? undefined : isCharter ? undefined : destination?.place_id,
-      stop_place_ids: stops.filter(Boolean).map((s) => s!.place_id),
+      origin: isAirport && direction === "arrival" ? undefined : point(origin),
+      destination: isAirport && direction === "departure" ? undefined : isCharter ? undefined : point(destination),
+      stops: stops.filter(Boolean).map((s) => point(s)!),
       pickup_at: `${f.get("pickup_at")}:00+07:00`,
       hours: isCharter ? hours : null,
       pax: Number(f.get("pax")),
@@ -99,7 +101,6 @@ export function QuoteForm({
       no_flight: isAirport && noFlight,
       notes: String(f.get("notes") ?? "") || null,
       source_answer: mode === "customer" ? String(f.get("source") ?? "") || null : null,
-      session_token: sessionToken,
       manual: manual ? { distance_km: Number(f.get("distance_km")), duration_min: Number(f.get("duration_min")) } : null,
     };
     setBusy(true);
@@ -114,7 +115,6 @@ export function QuoteForm({
     if (!res.ok) {
       const err = out?.error;
       if (err?.code === "QUOTE_RULE") return setErrors((err.details.errors as string[]).map((c) => RULE_TH[c] ?? c));
-      if (err?.code === "ROUTE_UNAVAILABLE" && mode === "staff") setManual(true);
       return setErrors([err?.message_th ?? "ขอราคาไม่สำเร็จ"]);
     }
     router.push(mode === "customer" ? `/liff/customer/quotes/${out.id}` : `/admin/quotes/${out.id}`);
@@ -205,24 +205,22 @@ export function QuoteForm({
 
       {isAirport ? (
         direction === "arrival"
-          ? <PlaceInput label={addressLabel!} value={destination} onChange={setDestination} sessionToken={sessionToken} required />
-          : <PlaceInput label={addressLabel!} value={origin} onChange={setOrigin} sessionToken={sessionToken} required />
+          ? <LocationInput label={addressLabel!} value={destination} onChange={setDestination} required />
+          : <LocationInput label={addressLabel!} value={origin} onChange={setOrigin} required />
       ) : (
         <>
-          <PlaceInput label={isCharter ? "จุดรับ / จุดเริ่ม" : "ต้นทาง"} value={origin} onChange={setOrigin} sessionToken={sessionToken} required />
+          <LocationInput label={isCharter ? "จุดรับ / จุดเริ่ม" : "ต้นทาง"} value={origin} onChange={setOrigin} required />
           {stops.map((s, i) => (
-            <div key={i} className="flex items-end gap-2">
-              <div className="flex-1">
-                <PlaceInput label={`จุดแวะ ${i + 1}`} value={s} sessionToken={sessionToken}
-                  onChange={(p) => setStops(stops.map((x, j) => (j === i ? p : x)))} />
-              </div>
-              <button type="button" className="pb-3 text-sm text-muted" onClick={() => setStops(stops.filter((_, j) => j !== i))}>ลบ</button>
+            <div key={i} className="space-y-1">
+              <LocationInput label={`จุดแวะ ${i + 1}`} value={s}
+                onChange={(p) => setStops(stops.map((x, j) => (j === i ? p : x)))} />
+              <button type="button" className="text-sm text-muted underline" onClick={() => setStops(stops.filter((_, j) => j !== i))}>ลบจุดแวะนี้</button>
             </div>
           ))}
           {stops.length < 5 && (
             <button type="button" className="text-sm text-navy underline" onClick={() => setStops([...stops, null])}>+ เพิ่มจุดแวะ</button>
           )}
-          {!isCharter && <PlaceInput label="ปลายทาง" value={destination} onChange={setDestination} sessionToken={sessionToken} required />}
+          {!isCharter && <LocationInput label="ปลายทาง" value={destination} onChange={setDestination} required />}
         </>
       )}
 
@@ -282,7 +280,7 @@ export function QuoteForm({
         <div className="space-y-2 rounded-xl bg-page p-3">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="h-5 w-5 accent-navy" checked={manual} onChange={(e) => setManual(e.target.checked)} />
-            กรอกระยะทางเอง (ใช้เมื่อระบบแผนที่ใช้ไม่ได้ — บันทึกว่า manual)
+            กรอกระยะทางเอง (ใช้เมื่อระยะถนนจริงต่างจากที่ระบบประมาณมาก — บันทึกว่า manual)
           </label>
           {manual && (
             <div className="grid grid-cols-2 gap-3">
@@ -303,7 +301,7 @@ export function QuoteForm({
         <button className={`${btnPrimary} flex-1`} disabled={busy}>{busy ? "กำลังคำนวณราคา…" : "ขอใบเสนอราคา"}</button>
         {mode === "staff" && <button type="button" className={btnSecondary} onClick={() => router.back()}>ยกเลิก</button>}
       </div>
-      <p className="text-center text-xs text-muted">ราคารวมน้ำมันและคนขับ · ไม่รวมทางด่วนและค่าจอด (เบิกตามจริง)</p>
+      <p className="text-center text-xs text-muted">ราคารวมน้ำมันและคนขับ · ไม่รวมทางด่วนและค่าจอด (เบิกตามจริง) · ระยะทางประมาณจากตำแหน่งที่ระบุ</p>
     </form>
   );
 }

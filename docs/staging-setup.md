@@ -4,7 +4,7 @@
 
 ```
 0 GitHub → 1 Supabase → 2 สุ่ม secrets → 3 Vercel (deploy ครั้งแรก ได้ URL)
-→ 4 Google Maps → 5 LINE (ต้องมี URL แล้ว) → 6 cron → 7 ข้อมูลในหลังบ้าน → 8 ทดสอบ
+→ 4 แผนที่ (ไม่ต้องทำอะไร) → 5 LINE (ต้องมี URL แล้ว) → 6 cron → 7 ข้อมูลในหลังบ้าน → 8 ทดสอบ
 ```
 
 จดค่าที่ได้แต่ละขั้นไว้ใน password manager (เช่น Bitwarden/1Password) ห้ามจดใน LINE/อีเมล
@@ -134,15 +134,14 @@ node -e "const c=require('crypto');for(const k of ['SESSION_SECRET','FIELD_ENCRY
 
 ---
 
-## 4. Google Maps
+## 4. แผนที่ — ไม่ต้องสมัครหรือผูกบัตร
 
-1. console.cloud.google.com → สร้าง project ใหม่ → **Billing** → ผูกบัตร (บังคับ แม้ใช้ไม่เกินโควตาฟรี)
-2. **APIs & Services → Library** → เปิด **Routes API** และ **Places API (New)**
-3. **Credentials → Create credentials → API key** → คลิก key ที่ได้ → **API restrictions → Restrict key** → เลือก 2 API ข้างบน → Save
-4. **Billing → Budgets & alerts** → ตั้งงบ เช่น ฿500 ให้เตือนทางอีเมล
-5. Vercel → เพิ่ม `GOOGLE_MAPS_SERVER_KEY` → Redeploy
+ระบบไม่ใช้ API แผนที่ที่มีค่าใช้จ่ายแล้ว:
+- ลูกค้าระบุตำแหน่งเอง: **📍 ตำแหน่งปัจจุบัน** (GPS มือถือ) · **🗺️ ปักหมุด** บนแผนที่ OpenStreetMap · **🔗 วางลิงก์** ที่แชร์จากแอป Google Maps หรือพิกัด
+- ราคา = ระยะเส้นตรงผ่านทุกจุด × 1.35 (ประมาณระยะถนน) แล้วคิดตามตารางราคา · ปรับตัวคูณได้ที่ ตั้งค่า → `route_estimate`
+- คนขับกด **Google Maps** หรือ **Waze** ในหน้างานเพื่อนำทางไปที่หมุด
 
-ถ้าไม่ใส่ key: บน Vercel (production build) ระบบจะ**ขอราคาไม่ได้เลย** (ตัวจำลองสถานที่ใช้ได้เฉพาะบนเครื่อง)
+ไม่ต้องใส่ env อะไรเพิ่ม ถ้าเคยใส่ `GOOGLE_MAPS_SERVER_KEY` ใน Vercel ลบทิ้งได้
 
 ---
 
@@ -241,7 +240,7 @@ from (values
 | เมนู | ต้องแก้ |
 |---|---|
 | ตั้งค่า → `company` | ชื่อบริษัท ที่อยู่ เลขผู้เสียภาษี · **`promptpay_id` ตอนนี้เป็นเบอร์ตัวอย่าง `0812345678` ต้องเปลี่ยนเป็นของบริษัท** ไม่งั้นลูกค้าโอนผิดคน |
-| ตั้งค่า → `airports` | `place_id` ตอนนี้เป็นค่าจำลอง `stub:BKK` / `stub:DMK` → ต้องเปลี่ยนเป็น place ID จริง (หาที่ developers.google.com/maps/documentation/places/web-service/place-id พิมพ์ "Suvarnabhumi Airport" / "Don Mueang International Airport") ไม่งั้นขอราคารับส่งสนามบินไม่ได้ |
+| ตั้งค่า → `airports` | ใช้พิกัด lat/lng (ค่าเริ่มเป็นพิกัดโดยประมาณของสุวรรณภูมิ/ดอนเมือง) → เปิดแผนที่ตรวจว่าตรงอาคารผู้โดยสาร ถ้าคลาดให้แก้ lat/lng · `place_id` ไม่ใช้แล้ว |
 | ตั้งค่า → `brand`, `line_oa_url`, `emergency.owner_phone` | ชื่อแบรนด์ ลิงก์ OA เบอร์เจ้าของ |
 | ราคา | แทนราคาตัวอย่างด้วยราคาจริง (Pilot 2.2) |
 | กฎ ขบ. | ประเภทจดทะเบียนที่รับงานได้ + ใบขับขี่↔ประเภทรถ · ช่วงทดลองกรอกค่าชั่วคราวเพื่อทดสอบได้ แต่ **ก่อนเปิดจริงต้องเป็นคำตอบ ขบ.** · ว่าง = ไม่มีรถคันไหนรับงานได้ |

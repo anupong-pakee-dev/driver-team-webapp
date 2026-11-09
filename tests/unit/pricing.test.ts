@@ -55,7 +55,7 @@ describe("validateQuoteRequest (FR-BOOK-01/02)", () => {
   const now = new Date("2026-11-01T00:00:00Z");
   const base: QuoteRequest = {
     service_type: "airport_transfer", car_type: "sedan",
-    origin: { place_id: "BKK", name: "สุวรรณภูมิ" }, destination: { place_id: "x", name: "โรงแรม" }, stops: [],
+    origin: { name: "สุวรรณภูมิ", lat: 13.69, lng: 100.7501 }, destination: { name: "โรงแรม", lat: 13.729, lng: 100.534 }, stops: [],
     pickup_at: "2026-11-02T00:00:00Z", hours: null, pax: 2, luggage: 2, child_seats: 0,
     flight: { no: "TG123", airport: "BKK", direction: "arrival" }, no_flight: false,
   };

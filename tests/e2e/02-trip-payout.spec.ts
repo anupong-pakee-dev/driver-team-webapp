@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { bookAndPay, bookingStatus, closeDb, ctx, loginLine, loginStaff, pendingOffer, PNG, q, soonPickup } from "./helpers";
+import { PLACES, bookAndPay, bookingStatus, closeDb, ctx, loginLine, loginStaff, pendingOffer, PNG, q, soonPickup } from "./helpers";
 
 // §15 (2) dispatch → รับงาน → check-in → จบงาน → payout
 // (6) ขอเบอร์ลูกค้านอกช่วงเวลา → 403
@@ -17,7 +17,7 @@ test("dispatch, trip day, completion and payout", async () => {
 
   // ไกลกว่า 2 ชม. → ยังขอเบอร์ไม่ได้
   const { bookingId } = await bookAndPay(customer, {
-    service_type: "point_to_point", car_type: "van_vip", origin_place_id: "stub:siam", destination_place_id: "stub:huahin",
+    service_type: "point_to_point", car_type: "van_vip", origin: PLACES.siam, destination: PLACES.huahin,
     pickup_at: soonPickup(170), pax: 4, luggage: 3, child_seats: 0,
   });
   const offer = await pendingOffer(bookingId);

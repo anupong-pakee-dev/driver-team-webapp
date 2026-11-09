@@ -1,7 +1,8 @@
 // FR-BOOK-01/02, BR-QUOTE — ตรวจคำขอราคาก่อนคำนวณ (กฎล้วน)
 
 export type ServiceType = "airport_transfer" | "point_to_point" | "hourly_charter" | "daily_charter" | "driver_only";
-export type Place = { place_id: string; name: string; lat?: number; lng?: number };
+// ตำแหน่งที่ลูกค้าเลือก (มีพิกัดเสมอสำหรับงานใหม่ · งานย้ายจาก Pilot มีแค่ชื่อ)
+export type Place = { name: string; lat?: number; lng?: number; source?: "gps" | "pin" | "link" | "airport" };
 
 export type QuoteRequest = {
   service_type: ServiceType;

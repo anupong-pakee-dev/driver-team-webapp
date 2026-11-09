@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { acceptQuote, BASE, closeDb, createQuote, ctx, futurePickup, loginLine, loginStaff, q } from "./helpers";
+import { PLACES, acceptQuote, BASE, closeDb, createQuote, ctx, futurePickup, loginLine, loginStaff, q } from "./helpers";
 
 // §15 (7) ลิงก์แคมเปญ → booking มี source · FR-ADS-10 ไม่ยินยอม = ไม่มีคำขอไปแพลตฟอร์มโฆษณา
 test.afterAll(closeDb);
@@ -38,7 +38,7 @@ test("campaign link carries attribution into the booking", async ({ page, contex
   const api = await ctx();
   await loginLine(api, "Udev-customer-2");
   const qt = await createQuote(api, {
-    service_type: "daily_charter", car_type: "sedan", origin_place_id: "stub:silom", pickup_at: futurePickup(35),
+    service_type: "daily_charter", car_type: "sedan", origin: PLACES.silom, pickup_at: futurePickup(35),
     hours: 10, pax: 2, luggage: 1, child_seats: 0,
   });
   const a = await acceptQuote(api, qt.id);

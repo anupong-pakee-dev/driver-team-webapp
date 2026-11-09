@@ -37,7 +37,6 @@ export default async function QuoteRequestPage({ searchParams }: PageProps<"/lif
             options={options}
             initialService={typeof sp.service === "string" ? sp.service : undefined}
             initialCar={typeof sp.car === "string" ? sp.car : undefined}
-            sessionToken={randomUUID()}
             idempotencyKey={randomUUID()}
             minPickup={bangkokLocalInput(Number(lead ?? 120))}
           />

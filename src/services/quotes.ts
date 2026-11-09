@@ -1,17 +1,14 @@
 import "server-only";
-import { createHash } from "node:crypto";
-import { placeDetail, type PlaceDetail } from "@/adapters/maps/places";
-import { computeRoute } from "@/adapters/maps/routes";
 import { quoteFlex } from "@/adapters/line/flex";
+import { DEFAULT_ESTIMATE, estimateRoute, inThailand, type EstimateConfig } from "@/domain/geo";
 import { PricingError, checkDiscount, depositFor, extrasFor, price, type Extras, type PriceRule } from "@/domain/pricing";
 import {
   CHARTER_SERVICES, QUOTE_EXCLUDES, QUOTE_INCLUDES, normalizeFlightNo, validateQuoteRequest,
-  type QuoteRequest, type ServiceType,
+  type Place, type QuoteRequest, type ServiceType,
 } from "@/domain/quotes";
 import type { SessionUser } from "@/lib/auth";
 import { pool, SYSTEM, withTx, type Db } from "@/lib/db";
 import { BizError } from "@/lib/errors";
-import { log } from "@/lib/redact";
 import { getSettings, type CatalogSettings } from "@/lib/settings";
 import { formatBangkok } from "@/lib/time";
 import { carLabel, SERVICE_TYPES } from "./portal";
@@ -20,14 +17,17 @@ import { invalidateCatalog } from "./catalog";
 import { touchesFor } from "./ads";
 
 // FR-PRICE-01, FR-QUOTE-01/02/04, BR-QUOTE-01..03
+// ตำแหน่งมาจากลูกค้า (GPS / ปักหมุด / ลิงก์ Google Maps) · ระยะทาง = ประมาณจากพิกัด (domain/geo) ไม่เรียก API แผนที่
+
+export type PointInput = { lat: number; lng: number; name?: string; source: "gps" | "pin" | "link" };
 
 export type CreateQuoteInput = {
   customer_id?: string;                 // staff สร้างแทนลูกค้า
   service_type: ServiceType;
   car_type: string;
-  origin_place_id?: string;
-  destination_place_id?: string;
-  stop_place_ids: string[];
+  origin?: PointInput;
+  destination?: PointInput;
+  stops: PointInput[];
   pickup_at: string;
   hours?: number | null;
   pax: number;
@@ -37,38 +37,21 @@ export type CreateQuoteInput = {
   no_flight: boolean;
   notes?: string | null;
   source_answer?: string | null;
-  session_token?: string;
-  manual?: { distance_km: number; duration_min: number } | null;   // staff เท่านั้น (Routes API ล่ม)
+  manual?: { distance_km: number; duration_min: number } | null;   // staff เท่านั้น (ระยะจริงต่างจากที่ประมาณมาก)
 };
 
-type Airport = { place_id: string; name: string; lat: number; lng: number };
+type Airport = { name: string; lat: number; lng: number };
 
 const serviceLabel = (s: string) => SERVICE_TYPES.find((x) => x.value === s)?.label ?? s;
 
-async function resolvePlace(id: string | undefined, sessionToken?: string): Promise<PlaceDetail | null> {
-  if (!id) return null;
-  try {
-    return await placeDetail(id, sessionToken);
-  } catch (e) {
-    log.warn("place lookup failed", { error: (e as Error).message });
-    throw new BizError("VALIDATION", { field: "place" });
-  }
-}
-
-async function routeFor(points: PlaceDetail[], cacheDays: number) {
-  const key = createHash("sha256").update(points.map((p) => p.place_id).join(">")).digest("hex");
-  const hit = await pool.query(
-    `select distance_m, duration_s from route_cache where key = $1 and created_at > now() - make_interval(days => $2)`,
-    [key, cacheDays],
-  );
-  if (hit.rows[0]) return { distanceM: hit.rows[0].distance_m as number, durationS: hit.rows[0].duration_s as number };
-  const r = await computeRoute(points);
-  await pool.query(
-    `insert into route_cache (key, distance_m, duration_s) values ($1, $2, $3)
-     on conflict (key) do update set distance_m = excluded.distance_m, duration_s = excluded.duration_s, created_at = now()`,
-    [key, r.distanceM, r.durationS],
-  );
-  return r;
+/** พิกัดต้องอยู่ในไทย · ไม่มีชื่อ = แสดงพิกัดแทน (คนขับนำทางจากพิกัดเสมอ) */
+function toPlace(p: PointInput | undefined): Place | null {
+  if (!p) return null;
+  if (!inThailand(p)) throw new BizError("VALIDATION", { field: "place", problem: "outside_thailand" });
+  const lat = Math.round(p.lat * 1e6) / 1e6;
+  const lng = Math.round(p.lng * 1e6) / 1e6;
+  const name = p.name?.trim() || `ตำแหน่งที่ปักไว้ (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+  return { name, lat, lng, source: p.source };
 }
 
 async function activeRule(db: Db, car: string, service: string): Promise<(PriceRule & { tax_category: string }) | null> {
@@ -92,22 +75,23 @@ export async function createQuote(actor: SessionUser, input: CreateQuoteInput) {
   const catalog = s.catalog as CatalogSettings;
   const airports = s.airports as Record<"BKK" | "DMK", Airport>;
 
-  // §8.3 rate limit ลูกค้า (กันค่าใช้จ่าย Routes API)
+  // §8.3 rate limit ลูกค้า (กันสแปมใบเสนอราคา)
   if (!staff) {
     const { rows } = await pool.query(
       `select count(*)::int as n from quotes where created_by = $1 and created_at > now() - interval '1 hour'`, [actor.id]);
     if (rows[0].n >= Number(s.quote_rate_limit_per_hour ?? 10)) throw new BizError("RATE_LIMITED");
   }
 
-  // ─── สถานที่: server ดึงชื่อ/พิกัดเอง ไม่เชื่อค่าจาก client ───
-  let origin = await resolvePlace(input.origin_place_id, input.session_token);
-  let destination = await resolvePlace(input.destination_place_id, input.session_token);
-  const stops = (await Promise.all(input.stop_place_ids.map((id) => resolvePlace(id, input.session_token)))) as PlaceDetail[];
+  // ─── สถานที่: ฝั่งสนามบินใช้พิกัดจาก settings เสมอ (ไม่เชื่อค่าจาก client) ───
+  let origin = toPlace(input.origin);
+  let destination = toPlace(input.destination);
+  const stops = input.stops.map((p) => toPlace(p)!);
   if (input.service_type === "airport_transfer" && input.flight) {
     const ap = airports[input.flight.airport];
     if (!ap) throw new BizError("VALIDATION", { field: "airport" });
-    if (input.flight.direction === "arrival") origin = ap;
-    else destination = ap;
+    const airport: Place = { name: ap.name, lat: ap.lat, lng: ap.lng, source: "airport" };
+    if (input.flight.direction === "arrival") origin = airport;
+    else destination = airport;
   }
   if (!origin) throw new BizError("VALIDATION", { field: "origin" });
 
@@ -130,20 +114,11 @@ export async function createQuote(actor: SessionUser, input: CreateQuoteInput) {
 
   // ─── ระยะทาง ───
   const points = [origin, ...stops, ...(destination ? [destination] : [])];
-  let route: { distanceM: number; durationS: number };
-  let source: "routes_api" | "manual";
-  if (input.manual) {
-    route = { distanceM: Math.round(input.manual.distance_km * 1000), durationS: Math.round(input.manual.duration_min * 60) };
-    source = "manual";
-  } else {
-    try {
-      route = await routeFor(points, Number(s.route_cache_days ?? 7));
-      source = "routes_api";
-    } catch (e) {
-      log.error("route failed", { error: (e as Error).message });
-      throw new BizError("ROUTE_UNAVAILABLE", { manual_allowed: staff });
-    }
-  }
+  const estimate = { ...DEFAULT_ESTIMATE, ...(s.route_estimate as Partial<EstimateConfig> | undefined) };
+  const route = input.manual
+    ? { distanceM: Math.round(input.manual.distance_km * 1000), durationS: Math.round(input.manual.duration_min * 60) }
+    : estimateRoute(points as { lat: number; lng: number }[], estimate);
+  const source = input.manual ? "manual" : "estimate";
 
   return withTx({ userId: actor.id, role: actor.role, reason: "create quote" }, async (db) => {
     if (staff) {

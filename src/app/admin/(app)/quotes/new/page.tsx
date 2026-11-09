@@ -34,7 +34,6 @@ export default async function NewQuote({ searchParams }: PageProps<"/admin/quote
             label: `${c.name}${c.linked ? " · LINE" : " · ไม่มี LINE (ส่งลิงก์เอง)"}`,
           }))}
           initialService={typeof sp.service === "string" ? sp.service : undefined}
-          sessionToken={randomUUID()}
           idempotencyKey={randomUUID()}
           minPickup={bangkokLocalInput(0)}
         />

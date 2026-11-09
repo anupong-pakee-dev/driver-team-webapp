@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { TRIP_STEPS } from "@/domain/dispatch";
+import { navLinks } from "@/domain/geo";
 import { formatBaht } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
 import { formatBangkok } from "@/lib/time";
@@ -15,6 +16,21 @@ export const dynamic = "force-dynamic";
 
 const NEXT_STEP: Record<string, keyof typeof TRIP_STEPS> = { assigned: "depart", en_route: "arrive", arrived: "pickup", picked_up: "dropoff" };
 
+// นำทางจากพิกัดที่ลูกค้าปักไว้ — เปิดแอป Google Maps / Waze ในมือถือ (ไม่ใช้ API key) · งานย้ายจาก Pilot มีแค่ชื่อ → ค้นหาแทน
+function Nav({ p }: { p: { lat?: number; lng?: number; name: string } | null }) {
+  if (!p) return null;
+  if (p.lat == null || p.lng == null) {
+    return <a className="text-navy underline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`} target="_blank" rel="noreferrer">ค้นหา</a>;
+  }
+  const l = navLinks({ lat: p.lat, lng: p.lng });
+  return (
+    <span className="flex shrink-0 gap-3">
+      <a className="text-navy underline" href={l.google} target="_blank" rel="noreferrer">Google Maps</a>
+      <a className="text-navy underline" href={l.waze} target="_blank" rel="noreferrer">Waze</a>
+    </span>
+  );
+}
+
 // FR-TRIP-01..06 หน้าวันงานของคนขับ
 export default async function DriverJob({ params }: PageProps<"/liff/driver/jobs/[id]">) {
   const { user, notDriver } = await driverPage();
@@ -25,8 +41,6 @@ export default async function DriverJob({ params }: PageProps<"/liff/driver/jobs
   const st = BOOKING_STATUS_TH[j.status] ?? [j.status, "info"];
   const step = NEXT_STEP[j.status];
   const unpaid = j.balance_due === "before_start" && j.paid < j.price_satang;
-  const maps = (p: { lat?: number; lng?: number; name: string }) =>
-    p.lat != null ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
 
   return (
     <DriverShell title={formatBangkok(j.pickup_at)} subtitle={`${SERVICE_TYPES.find((s) => s.value === j.service_type)?.label} · ${carLabel(j.car_type)}${j.plate ? ` · ${j.plate}` : ""}`} active="home">
@@ -38,17 +52,16 @@ export default async function DriverJob({ params }: PageProps<"/liff/driver/jobs
         <dl className="mt-3 space-y-2 text-sm">
           <div>
             <dt className="text-muted">รับ</dt>
-            <dd className="flex items-center justify-between gap-2"><span className="font-medium">{j.origin?.name}</span>
-              <a className="text-navy underline" href={maps(j.origin)} target="_blank" rel="noreferrer">นำทาง</a></dd>
+            <dd className="flex items-center justify-between gap-2"><span className="font-medium">{j.origin?.name}</span><Nav p={j.origin} /></dd>
           </div>
           {j.stops?.map((s: { name: string; lat?: number; lng?: number }, i: number) => (
-            <div key={i}><dt className="text-muted">แวะ {i + 1}</dt><dd>{s.name}</dd></div>
+            <div key={i}><dt className="text-muted">แวะ {i + 1}</dt>
+              <dd className="flex items-center justify-between gap-2"><span>{s.name}</span><Nav p={s} /></dd></div>
           ))}
           {j.destination && (
             <div>
               <dt className="text-muted">ส่ง</dt>
-              <dd className="flex items-center justify-between gap-2"><span className="font-medium">{j.destination.name}</span>
-                <a className="text-navy underline" href={maps(j.destination)} target="_blank" rel="noreferrer">นำทาง</a></dd>
+              <dd className="flex items-center justify-between gap-2"><span className="font-medium">{j.destination.name}</span><Nav p={j.destination} /></dd>
             </div>
           )}
           {j.flight_no && <div><dt className="text-muted">เที่ยวบิน</dt><dd>{j.flight_no} · {j.airport} {j.flight_direction === "arrival" ? "ขาเข้า (รับที่สนามบิน)" : "ขาออก"}</dd></div>}

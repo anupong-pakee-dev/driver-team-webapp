@@ -9,7 +9,6 @@
 | Supabase (Singapore) | project production + staging แยกกัน | `DATABASE_URL` (pooler, transaction mode) · `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` · `SUPABASE_SERVICE_ROLE_KEY` |
 | Vercel | project ผูก repo, region `sin1` | — |
 | LINE | Messaging API channel (OA) + LINE Login channel + LIFF 2 แอป (ลูกค้า `/liff/customer`, คนขับ `/liff/driver`) · webhook `https://<โดเมน>/api/webhooks/line` | `LINE_CHANNEL_SECRET` · `LINE_CHANNEL_ACCESS_TOKEN` · `LINE_LOGIN_CHANNEL_ID` · `NEXT_PUBLIC_LIFF_ID_CUSTOMER` · `NEXT_PUBLIC_LIFF_ID_DRIVER` · `NEXT_PUBLIC_LINE_OA_URL` |
-| Google Maps | Routes API + Places API, จำกัด key ตาม IP/API | `GOOGLE_MAPS_SERVER_KEY` |
 | Omise (ถ้าใช้) | live key + webhook `/api/webhooks/omise` | `OMISE_SECRET_KEY` |
 | Meta Pixel (ถ้าใช้) | pixel id | `NEXT_PUBLIC_META_PIXEL_ID` |
 | แอป | สุ่มใหม่ทุกค่า (`openssl rand -base64 32`) **ห้ามใช้ค่าจาก local** | `SESSION_SECRET` · `FIELD_ENCRYPTION_KEY` · `FIELD_ENCRYPTION_KEY_VERSION=1` · `PHONE_HASH_KEY` · `CRON_SECRET` · `APP_URL=https://<โดเมน>` |
@@ -40,7 +39,7 @@ npx supabase db push            # migrations 0001–0009
 | ✋ `vat_registered`, `tax_category` ต่อบริการ | นักบัญชี | ใบเสร็จธรรมดา |
 | ✋ `customer_terms`, `driver_terms`, `privacy_notice` (เวอร์ชัน + ลิงก์) | ทนาย | ใช้ร่างของระบบ — **ไม่ควรเปิดจริง** |
 | `company` ชื่อ ที่อยู่ เลขผู้เสียภาษี PromptPay | บริษัท | ใบเสร็จ/QR ผิด |
-| `airports` place_id BKK/DMK · `line_oa_url` · `brand` · `emergency` เบอร์ | บริษัท | — |
+| `airports` พิกัด BKK/DMK (ตรงอาคารผู้โดยสาร) · `route_estimate` ตัวคูณระยะ/ความเร็วเฉลี่ย · `line_oa_url` · `brand` · `emergency` เบอร์ | บริษัท | — |
 | ราคา ทุกประเภทรถ × บริการที่เปิดขาย | ชีต Pilot 2.2 + กม./ชม.ที่รวม | ประเภทนั้นขอราคาไม่ได้ |
 
 ## 4. ย้ายข้อมูล Pilot (§17)
@@ -92,7 +91,7 @@ select cron.schedule('outbox', '* * * * *', $$
 |---|---|
 | ระบบล่ม/ต้องปิดปรับปรุง | ตั้ง `MAINTENANCE_MODE=true` ใน Vercel → redeploy (ไม่ต้อง build ใหม่: Instant Rollback/Promote) → ทุกหน้าแสดงหน้าแจ้ง + ปุ่ม LINE OA, API ตอบ 503 (ยกเว้น `/api/health`) |
 | LINE ส่งข้อความไม่ได้ | outbox ลองใหม่อัตโนมัติ → dead ขึ้นที่ `/admin/system` → โทรแจ้งลูกค้า/คนขับ แล้วกดส่งใหม่ |
-| Routes API ล่ม | ใบเสนอราคาให้แอดมินกรอกระยะทางเอง (`distance_source = manual`) |
+| ราคาประมาณคลาดจากระยะถนนจริงมาก | แอดมินสร้างใบเสนอราคาใหม่โดยกรอกระยะทางเอง (`distance_source = manual`) · ถ้าคลาดสม่ำเสมอ ปรับ `route_estimate.road_factor` |
 | ตรวจสลิปอัตโนมัติไม่ได้ | สลิปเข้า "รออนุมัติ" ให้เจ้าของตรวจมือ |
 | deploy ใหม่พัง | Vercel Instant Rollback ไป deployment ก่อนหน้า · migration ต้องเขียนแบบเพิ่มอย่างเดียว (ไม่ลบคอลัมน์ใน release เดียวกัน) |
 
