@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Design tokens จาก mockup "A · ไว้ใจได้ (แคตตาล็อกรถ)" */
+@theme {
+  --color-navy: #13294b;
+  --color-navy-soft: #1d3a66;
+  --color-amber: #f2a900;
+  --color-amber-soft: #f6c75a;
+  --color-page: #f3f5f8;
+  --color-card: #ffffff;
+  --color-line: #dde1e7;
+  --color-placeholder: #e6e9ef;
+  --color-ink: #13294b;
+  --color-muted: #5b6575;
+  --color-ok: #1f8a4c;
+  --color-warn: #b45309;
+  --color-bad: #b42318;
+
+  --font-sans: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 1rem;
+  --radius-btn: 0.875rem;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-amber);
+  outline-offset: 2px;
+}
