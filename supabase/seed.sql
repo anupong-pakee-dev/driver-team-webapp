@@ -40,7 +40,7 @@ insert into settings (key, value) values
   -- FR-BOOK-03 ❓ Terms / Privacy ลูกค้า รอทนาย — version เปลี่ยน = ต้องยอมรับใหม่ตอนจองครั้งถัดไป
   ('customer_terms', '{"terms_version":"draft-2026-10","privacy_version":"draft-2026-10"}'),
   -- ⚠️ ข้อมูลบริษัทตัวอย่าง — พร้อมเพย์/บัญชีต้องเป็นของบริษัทเท่านั้น (BR-PAY-04)
-  ('company', '{"name_th":"[ชื่อบริษัท]","tax_id":"","address_th":"","promptpay_id":"0812345678",
+  ('company', '{"name_th":"Avera Taxi Thailand","tax_id":"","address_th":"","promptpay_id":"0812345678",
                 "accounts":["0812345678"],"account_name":"[ชื่อบัญชีบริษัท]"}'),
   -- BR-PAY-03 ยอดคงเหลือ: before_start (ค่าเริ่ม) / after_end ต่อบริการ
   ('balance_due', '{"default":"before_start"}'),
@@ -76,7 +76,7 @@ insert into settings (key, value) values
   ('airports', '{"BKK":{"place_id":"stub:BKK","name":"ท่าอากาศยานสุวรรณภูมิ (BKK)","lat":13.69,"lng":100.7501},
                  "DMK":{"place_id":"stub:DMK","name":"ท่าอากาศยานดอนเมือง (DMK)","lat":13.9126,"lng":100.6068}}'),
   ('charter_hours',            '{"hourly_charter":[5,10],"daily_charter":[10],"driver_only":[5,10]}'),
-  ('brand',                    '{"name_th":"[ชื่อแบรนด์ทีม]","name_en":"[Team brand]"}'),
+  ('brand',                    '{"name_th":"Avera Taxi Thailand","name_en":"Avera Taxi Thailand"}'),
   -- ข้อความแคตตาล็อกต่อประเภทรถ (FR-CAT-01) — ที่นั่ง/กระเป๋าที่โฆษณา ไม่ใช่ของรถคันใดคันหนึ่ง
   ('catalog', '{
      "tabs": [

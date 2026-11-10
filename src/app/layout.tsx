@@ -9,8 +9,9 @@ const thai = IBM_Plex_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "เหมารถพร้อมคนขับ",
-  description: "เหมารถพร้อมคนขับ รู้ราคาก่อนจอง คนขับผ่านการตรวจประวัติและใบขับขี่",
+  title: { default: "Avera Taxi Thailand · เหมารถพร้อมคนขับ", template: "%s · Avera Taxi Thailand" },
+  description: "Avera Taxi Thailand เหมารถพร้อมคนขับ รู้ราคาก่อนจอง คนขับผ่านการตรวจประวัติและใบขับขี่",
+  applicationName: "Avera Taxi Thailand",
 };
 
 export const viewport: Viewport = {
