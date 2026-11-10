@@ -15,8 +15,14 @@ export const dynamic = "force-dynamic";
 
 const KYC = { pending: ["รอตรวจเอกสาร", "warn"], approved: ["อนุมัติแล้ว", "ok"], rejected: ["มีเอกสารไม่ผ่าน", "bad"] } as const;
 const RESULT_TH: Record<string, [string, "ok" | "warn" | "bad" | "info"]> = {
-  pending: ["รอตอบ", "warn"], accepted: ["รับ", "ok"], rejected: ["ปฏิเสธ", "bad"], expired: ["หมดเวลา", "bad"], withdrawn: ["ยกเลิก", "info"],
+  pending: ["รอตอบ", "warn"], accepted: ["รับแล้ว", "ok"], rejected: ["ปฏิเสธ", "bad"], expired: ["หมดเวลา", "bad"],
+  withdrawn: ["เจ้าของมอบให้คนอื่น", "info"], taken: ["มีคนรับแล้ว", "info"],
 };
+// งานจบหรือถูกยกเลิกแล้ว แสดงสถานะงานแทนผลข้อเสนอ — ทุกคนที่เคยเห็นงานนี้รู้ว่าปิดแล้ว (ไม่ส่ง LINE)
+const offerBadge = (o: { result: string; booking_status: string }): [string, "ok" | "warn" | "bad" | "info"] =>
+  o.booking_status === "completed" ? ["ปิดงานแล้ว", "ok"]
+  : ["cancelled", "expired", "no_show"].includes(o.booking_status) ? ["งานถูกยกเลิก", "info"]
+  : RESULT_TH[o.result] ?? [o.result, "info"];
 
 export default async function DriverHome() {
   const { user, notDriver } = await driverPage();
@@ -101,7 +107,7 @@ export default async function DriverHome() {
             {history.slice(0, 15).map((o) => (
               <li key={o.id} className="flex items-center justify-between gap-2 py-2">
                 <span>{formatBangkok(o.pickup_at)} · {svc(o.service_type)}{o.is_override && " (มอบหมายโดยเจ้าของ)"}</span>
-                <Badge tone={RESULT_TH[o.result]?.[1]}>{RESULT_TH[o.result]?.[0]}</Badge>
+                <Badge tone={offerBadge(o)[1]}>{offerBadge(o)[0]}</Badge>
               </li>
             ))}
           </ul>

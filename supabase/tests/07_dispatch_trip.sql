@@ -1,6 +1,6 @@
 -- เฟส 5: เสนองานเฉพาะคนที่ผ่านเกณฑ์ ณ วันงาน + ว่าง · offer ค้างได้ทีละ 1 · check-in รูปบังคับ · append-only · RLS
 begin;
-select plan(12);
+select plan(13);
 select tests.make_fixtures();
 
 -- (ฐานข้อมูล local อาจมีคนขับสาธิตจาก seed:demo → กรองเฉพาะคนขับของ fixture)
@@ -39,12 +39,16 @@ select is(assignment_problems('00000000-0000-0000-0000-0000000000b1', '00000000-
           array['time_conflict'], 'blocked calendar → time_conflict');
 delete from availability;
 
--- offer ค้างได้ทีละ 1 (BR-DISP-07) และไม่เสนอซ้ำคนเดิม
+-- ประกาศงานถึงหลายคนพร้อมกันได้ (คนละคนขับ) แต่คนเดิมมี offer ค้างซ้ำไม่ได้ และไม่เสนอซ้ำคนเดิม
 insert into job_offers (booking_id, driver_id, vehicle_id, expires_at)
   values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000e1', now() + interval '15 minutes');
+select lives_ok($$ insert into job_offers (booking_id, driver_id, expires_at)
+                   values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d2', now() + interval '15 minutes') $$,
+  'several drivers can hold an open offer for the same booking');
 select throws_ok($$ insert into job_offers (booking_id, driver_id, expires_at)
-                    values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d2', now()) $$,
-  '23505', null, 'one pending offer per booking');
+                    values ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000d1', now()) $$,
+  '23505', null, 'one open offer per driver per booking');
+delete from job_offers where driver_id = '00000000-0000-0000-0000-0000000000d2';
 select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1') where driver_id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2')), 0, 'already-offered driver excluded');
 select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1', true) where driver_id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2')), 1, 'include_offered lists them for override');
 

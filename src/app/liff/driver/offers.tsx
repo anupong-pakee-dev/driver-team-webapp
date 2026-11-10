@@ -6,6 +6,7 @@ import { btnPrimary, btnSecondary, input } from "@/components/ui";
 
 const ERR: Record<string, string> = {
   OFFER_EXPIRED: "ข้อเสนอหมดเวลาแล้ว",
+  OFFER_TAKEN: "งานนี้มีคนรับไปแล้ว",
   TIME_CONFLICT: "เวลาชนกับงานอื่นหรือช่วงที่ปิดไว้",
   NOT_ELIGIBLE: "เอกสาร/รถไม่ผ่านเกณฑ์ ณ วันงาน",
 };

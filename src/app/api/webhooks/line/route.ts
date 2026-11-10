@@ -21,6 +21,7 @@ const OFFER_TH: Record<string, string> = {
   OFFER_ACCEPTED: "รับงานนี้ไปแล้ว",
   OFFER_REJECTED: "ปฏิเสธงานนี้ไปแล้ว",
   OFFER_WITHDRAWN: "งานนี้ถูกยกเลิก/มอบให้คนอื่นแล้ว",
+  OFFER_TAKEN: "งานนี้มีคนรับไปแล้ว — รอข้อเสนองานถัดไปได้เลย",
   TIME_CONFLICT: "เวลาชนกับงานอื่นหรือช่วงที่ปิดไว้",
 };
 

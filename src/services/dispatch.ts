@@ -11,7 +11,8 @@ import { carLabel, SERVICE_TYPES } from "./portal";
 import { enqueue } from "./outbox";
 import { notifyRoles, notifyUser, transition } from "./bookings";
 
-// §7.3 Dispatch: เสนอทีละคน (BR-DISP-07) · TTL · คิวเวียน · คนสำรอง · override (FR-DISP-01..03)
+// §7.3 Dispatch: ประกาศงานถึงคนขับทุกคนที่ผ่านเกณฑ์ ณ วันงานพร้อมกัน · ใครกดรับก่อนได้งาน · คนอื่นได้แจ้งว่ามีคนรับแล้ว
+// TTL · คนสำรอง · override (FR-DISP-01..03) · ไม่มีใครรับภายในเวลา → แจ้งเจ้าของเลือกเอง
 
 const driverLink = (path: string) =>
   process.env.NEXT_PUBLIC_LIFF_ID_DRIVER
@@ -33,8 +34,11 @@ export async function rankedCandidates(db: Pick<Db, "query">, bookingId: string,
   ));
 }
 
-/** §7.3 รอบการทำงาน: งาน confirmed ที่ไม่มี offer ค้าง → เสนอคนแรกในคิว · ไม่มีใคร → แจ้ง owner + sales */
-export async function dispatchNext(db: Db, bookingId: string) {
+/**
+ * งาน confirmed ที่ไม่มี offer ค้าง → ประกาศถึงคนขับทุกคนที่ผ่านเกณฑ์ (ไม่ซ้ำคนที่เคยได้ข้อเสนองานนี้)
+ * ไม่มีใคร → แจ้ง owner + sales · reoffer: ประกาศอีกรอบรวมคนที่เคยได้ (หลังคนขับยกเลิก / เจ้าของสั่ง) ยกเว้น exclude
+ */
+export async function dispatchNext(db: Db, bookingId: string, opts: { reoffer?: boolean; exclude?: string } = {}) {
   const { rows } = await db.query(
     `select b.id, b.status, b.service_type, b.car_type, b.pickup_at, b.price_satang, b.backup_driver_id, q.origin, q.destination
        from bookings b join quotes q on q.id = b.quote_id where b.id = $1 for update of b`, [bookingId]);
@@ -44,14 +48,8 @@ export async function dispatchNext(db: Db, bookingId: string) {
   if (pending.rows[0]) return { offered: pending.rows[0].id as string, reason: "ALREADY_PENDING" };
 
   const s = await settingsOf(db);
-  let cands = await rankedCandidates(db, bookingId);
-  // BR-DISP-06: มีคนสำรองที่ยังรับได้ → เสนอคนสำรองก่อน
-  if (b.backup_driver_id) {
-    const backup = cands.find((c) => c.driverId === b.backup_driver_id);
-    if (backup) cands = [backup, ...cands.filter((c) => c !== backup)];
-  }
-  const first = cands[0];
-  if (!first) {
+  const cands = (await rankedCandidates(db, bookingId, opts.reoffer ?? false)).filter((c) => c.driverId !== opts.exclude);
+  if (!cands.length) {
     await notifyRoles(db, ["owner", "sales_admin"],
       `[ไม่มีคนรับงาน] ${formatBangkok(b.pickup_at)} · ${carLabel(b.car_type)} — เลือกคนขับเองในหลังบ้าน`,
       `no-driver:${bookingId}:${new Date().toISOString().slice(0, 13)}`);
@@ -59,14 +57,17 @@ export async function dispatchNext(db: Db, bookingId: string) {
   }
 
   const ttl = offerTtlMinutes(new Date(b.pickup_at), new Date(), s);
-  const { rows: o } = await db.query(
-    `insert into job_offers (booking_id, driver_id, vehicle_id, expires_at)
-     values ($1, $2, $3, now() + make_interval(mins => $4)) returning id, expires_at`,
-    [bookingId, first.driverId, first.vehicleId, ttl]);
-  const offer = o[0];
-  const { rows: d } = await db.query(`select line_user_id from users where id = $1`, [first.driverId]);
-  if (d[0]?.line_user_id) {
-    const pay = Math.round(Number(b.price_satang) * (1 - s.commission_rate));
+  const pay = Math.round(Number(b.price_satang) * (1 - s.commission_rate));
+  const offered: string[] = [];
+  for (const c of cands) {
+    const { rows: o } = await db.query(
+      `insert into job_offers (booking_id, driver_id, vehicle_id, expires_at)
+       values ($1, $2, $3, now() + make_interval(mins => $4)) returning id, expires_at`,
+      [bookingId, c.driverId, c.vehicleId, ttl]);
+    const offer = o[0];
+    offered.push(offer.id);
+    const { rows: d } = await db.query(`select line_user_id from users where id = $1`, [c.driverId]);
+    if (!d[0]?.line_user_id) continue;
     await enqueue(db, "line.push", {
       to: d[0].line_user_id,
       messages: [offerFlex({
@@ -78,18 +79,26 @@ export async function dispatchNext(db: Db, bookingId: string) {
         payText: `ประมาณ ${formatBaht(pay)} (ก่อนหัก ณ ที่จ่าย)`,
         expiresText: formatBangkok(offer.expires_at),
         url: driverLink("/"),
+        competing: cands.length > 1,
       })],
     }, `offer:${offer.id}`);
   }
-  return { offered: offer.id as string, driverId: first.driverId };
+  return { offered: offered[0] ?? null, offers: offered.length };
 }
 
-/** FR-DISP-02: คนขับรับงาน → ตรวจซ้ำ ณ วันงาน → assigned + คนสำรอง + แจ้งลูกค้า */
+/** FR-DISP-02: คนขับรับงาน → ตรวจซ้ำ ณ วันงาน → assigned + คนสำรอง + แจ้งลูกค้า · ปิดข้อเสนอของคนอื่น (มีคนรับแล้ว) */
 export async function acceptOffer(driver: SessionUser, offerId: string, vehicleId?: string | null) {
   return withTx({ userId: driver.id, role: driver.role, reason: "accept offer" }, async (db) => {
+    // ล็อกงานก่อนข้อเสนอเสมอ: คนขับหลายคนกดรับพร้อมกัน → เข้าคิวที่งาน คนแรกได้ คนถัดไปเห็นว่ามีคนรับแล้ว (ไม่ deadlock)
+    const { rows: ref } = await db.query(`select booking_id from job_offers where id = $1`, [offerId]);
+    if (!ref[0]) throw new BizError("NOT_FOUND");
+    const { rows: bk } = await db.query(`select status from bookings where id = $1 for update`, [ref[0].booking_id]);
     const { rows } = await db.query(`select * from job_offers where id = $1 for update`, [offerId]);
     const o = rows[0];
     if (!o || o.driver_id !== driver.id) throw new BizError("NOT_FOUND");
+    if (o.result === "taken" || (o.result === "pending" && bk[0]?.status !== "confirmed")) {
+      throw new BizError("INVALID_TRANSITION", { reason: "OFFER_TAKEN" });
+    }
     if (o.result !== "pending") throw new BizError("INVALID_TRANSITION", { reason: `OFFER_${String(o.result).toUpperCase()}` });
     if (new Date(o.expires_at) <= new Date()) throw new BizError("INVALID_TRANSITION", { reason: "OFFER_EXPIRED" });
     const vehicle = vehicleId ?? o.vehicle_id;
@@ -100,6 +109,7 @@ export async function acceptOffer(driver: SessionUser, offerId: string, vehicleI
 
     await db.query(`update job_offers set result = 'accepted', vehicle_id = $2 where id = $1`, [offerId, vehicle]);
     await transition(db, o.booking_id, "assigned", "driver", { driver_id: driver.id, vehicle_id: vehicle });
+    await closeOtherOffers(db, o.booking_id, "taken");
     await db.query(`update drivers set last_assigned_at = now() where user_id = $1`, [driver.id]);
     // §7.3 ข้อ 4: คนถัดไปในคิว = คนสำรอง (บันทึกเฉยๆ ไม่ส่ง offer)
     const backup = (await rankedCandidates(db, o.booking_id)).find((c) => c.driverId !== driver.id);
@@ -107,6 +117,16 @@ export async function acceptOffer(driver: SessionUser, offerId: string, vehicleI
     await notifyAssigned(db, o.booking_id);
     return { booking_id: o.booking_id as string, status: "assigned" };
   });
+}
+
+/** ปิดข้อเสนอที่ยังค้างของงานนี้ แล้วแจ้งคนขับเหล่านั้นทาง LINE ว่ามีคนรับแล้ว (taken) หรือเจ้าของมอบให้คนอื่น (withdrawn) */
+async function closeOtherOffers(db: Db, bookingId: string, result: "taken" | "withdrawn") {
+  const { rows } = await db.query(
+    `update job_offers o set result = $2 where booking_id = $1 and result = 'pending'
+     returning o.id, o.driver_id, (select pickup_at from bookings where id = $1) as pickup_at`, [bookingId, result]);
+  for (const r of rows) {
+    await notifyUser(db, r.driver_id, `งาน ${formatBangkok(r.pickup_at)} มีคนรับแล้ว — ขอบคุณที่สนใจ รอข้อเสนองานถัดไปได้เลย`, `taken:${r.id}`);
+  }
 }
 
 async function notifyAssigned(db: Db, bookingId: string) {
@@ -126,7 +146,7 @@ export async function rejectOffer(driver: SessionUser, offerId: string, reason: 
       `update job_offers set result = 'rejected', reject_reason = $3 where id = $1 and driver_id = $2 and result = 'pending'
        returning booking_id`, [offerId, driver.id, reason]);
     if (!rows[0]) throw new BizError("INVALID_TRANSITION");
-    // ปฏิเสธ → คนถัดไปทันที
+    // ปฏิเสธครบทุกคนแล้ว → ไม่มีคนใหม่ให้ประกาศ → แจ้งเจ้าของ (ยังมีคนอื่นค้างอยู่ = รอต่อ)
     await dispatchNext(db, rows[0].booking_id);
     return { status: "rejected" };
   });
@@ -155,7 +175,7 @@ export async function overrideAssign(owner: SessionUser, bookingId: string, driv
     }
     const { rows: p } = await db.query(`select assignment_problems($1, $2, $3) as r`, [bookingId, driverId, vehicleId]);
     if (p[0].r.length) throw new BizError("NOT_ELIGIBLE", { reasons: p[0].r });
-    await db.query(`update job_offers set result = 'withdrawn' where booking_id = $1 and result = 'pending'`, [bookingId]);
+    await closeOtherOffers(db, bookingId, "withdrawn");
     await db.query(
       `insert into job_offers (booking_id, driver_id, vehicle_id, expires_at, result, is_override, override_reason)
        values ($1, $2, $3, now(), 'accepted', true, $4)`, [bookingId, driverId, vehicleId, reason]);
@@ -167,12 +187,12 @@ export async function overrideAssign(owner: SessionUser, bookingId: string, driv
   });
 }
 
-/** owner สั่งเสนองานรอบใหม่ (เช่น หลังเพิ่มคนขับ) */
+/** owner สั่งประกาศงานรอบใหม่ (เช่น หลังเพิ่มคนขับ) — รวมคนที่เคยได้ข้อเสนอแล้ว */
 export async function redispatch(owner: SessionUser, bookingId: string) {
-  return withTx({ userId: owner.id, role: owner.role, reason: "redispatch" }, (db) => dispatchNext(db, bookingId));
+  return withTx({ userId: owner.id, role: owner.role, reason: "redispatch" }, (db) => dispatchNext(db, bookingId, { reoffer: true }));
 }
 
-/** §6.3 assigned → confirmed: คนขับยกเลิก → ปิด offer · ส่งคนสำรองทันที (strike เมื่อเปิด penalties_enabled) */
+/** §6.3 assigned → confirmed: คนขับยกเลิก → ประกาศงานอีกรอบถึงทุกคนที่ผ่านเกณฑ์ (ยกเว้นคนที่ยกเลิก) · strike เมื่อเปิด penalties_enabled */
 export async function driverCancel(driver: SessionUser, bookingId: string, reason: string) {
   return withTx({ userId: driver.id, role: driver.role, reason: `driver cancel: ${reason}` }, async (db) => {
     const { rows } = await db.query(`select driver_id, pickup_at from bookings where id = $1 for update`, [bookingId]);
@@ -181,7 +201,7 @@ export async function driverCancel(driver: SessionUser, bookingId: string, reaso
     await db.query(`insert into incidents (booking_id, type, reported_by, description) values ($1, 'other', $2, $3)`,
       [bookingId, driver.id, `คนขับยกเลิกงาน: ${reason}`]);
     await notifyRoles(db, ["owner", "sales_admin"], `[คนขับยกเลิก] ${driver.displayName} · ${formatBangkok(rows[0].pickup_at)} — ${reason}`, `drv-cancel:${bookingId}:${driver.id}`);
-    const next = await dispatchNext(db, bookingId);
+    const next = await dispatchNext(db, bookingId, { reoffer: true, exclude: driver.id });
     return { status: "confirmed", next_offer: next.offered };
   });
 }

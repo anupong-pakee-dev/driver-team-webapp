@@ -67,8 +67,8 @@ export const ACCEPT = {
   full_name: "ลูกค้า ทดสอบ E2E", phone: "0811111111",
 };
 
-export async function acceptQuote(c: APIRequestContext, quoteId: string) {
-  const res = await c.post(`/api/quotes/${quoteId}/accept`, { data: ACCEPT, headers: { "idempotency-key": randomUUID() } });
+export async function acceptQuote(c: APIRequestContext, quoteId: string, extra: Record<string, unknown> = {}) {
+  const res = await c.post(`/api/quotes/${quoteId}/accept`, { data: { ...ACCEPT, ...extra }, headers: { "idempotency-key": randomUUID() } });
   expect(res.status(), await res.text()).toBe(201);
   return (await res.json()) as { booking_id: string; payment: { id: string; amount_satang: number } };
 }
@@ -83,7 +83,8 @@ export async function paySlip(c: APIRequestContext, paymentId: string, amount: n
 /** จองจนมัดจำยืนยัน → คืน booking id */
 export async function bookAndPay(c: APIRequestContext, body: Record<string, unknown>) {
   const qt = await createQuote(c, body);
-  const a = await acceptQuote(c, qt.id);
+  // บริการ "คนขับอย่างเดียว" ใช้รถลูกค้า → ต้องยอมรับข้อตกลงความรับผิดเกี่ยวกับรถ
+  const a = await acceptQuote(c, qt.id, body.car_type === "driver_only" ? { vehicle_liability: true } : {});
   expect((await paySlip(c, a.payment.id, a.payment.amount_satang)).status).toBe("verified");
   return { bookingId: a.booking_id, quote: qt };
 }

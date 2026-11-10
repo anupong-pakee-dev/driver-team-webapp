@@ -14,7 +14,7 @@ export async function driverOffers(user: SessionUser) {
   if (!ids.length) return [];
   const { rows } = await pool.query(
     `select o.id, o.result, o.offered_at, o.expires_at, o.reject_reason, o.is_override, o.booking_id,
-            b.service_type, b.car_type, b.pickup_at, b.price_satang::int, v.plate, ${TRIP_FIELDS}
+            b.status as booking_status, b.service_type, b.car_type, b.pickup_at, b.price_satang::int, v.plate, ${TRIP_FIELDS}
        from job_offers o join bookings b on b.id = o.booking_id join quotes q on q.id = b.quote_id
        left join vehicles v on v.id = o.vehicle_id
       where o.id = any($1) order by o.offered_at desc`, [ids]);

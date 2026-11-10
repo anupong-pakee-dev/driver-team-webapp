@@ -62,7 +62,7 @@ export function quoteFlex(q: {
 /** ข้อเสนองานถึงคนขับ (FR-DISP-01) — ไม่มีชื่อ/เบอร์ลูกค้า · ปุ่ม postback รับ/ปฏิเสธ + ลิงก์ดูรายละเอียด */
 export function offerFlex(o: {
   offerId: string; serviceLabel: string; carLabel: string; route: string; pickupText: string;
-  payText: string; expiresText: string; url: string;
+  payText: string; expiresText: string; url: string; competing?: boolean;
 }) {
   const text = (t: string, extra: Record<string, unknown> = {}) => ({ type: "text", text: t, wrap: true, size: "sm", ...extra });
   return {
@@ -84,6 +84,7 @@ export function offerFlex(o: {
           text(o.route),
           text(`ค่างาน ${o.payText}`),
           text(`ตอบภายใน ${o.expiresText}`, { color: "#B45309", size: "xs" }),
+          ...(o.competing ? [text("ส่งถึงคนขับหลายคน — ใครกดรับก่อนได้งาน", { color: "#B45309", size: "xs" })] : []),
         ],
       },
       footer: {
