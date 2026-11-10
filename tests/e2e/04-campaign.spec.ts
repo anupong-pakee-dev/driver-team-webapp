@@ -25,7 +25,8 @@ test("campaign link carries attribution into the booking", async ({ page, contex
   expect(adRequests).toEqual([]);
   await page.getByRole("button", { name: "ยอมรับทั้งหมด" }).click();
   const cta = page.getByRole("link", { name: "ขอใบเสนอราคา" });
-  await expect(cta).toHaveAttribute("href", /[?&]t=[0-9a-f-]{36}/);
+  // touchpoint ถูกสร้างหลังกดยอมรับคุกกี้ (หน้าแรกหลัง reset คอมไพล์ช้า) → รอนานกว่าค่าเริ่ม
+  await expect(cta).toHaveAttribute("href", /[?&]t=[0-9a-f-]{36}/, { timeout: 15_000 });
   const tp = new URL(await cta.getAttribute("href") ?? "", BASE).searchParams.get("t")!;
 
   // login ลูกค้าในเบราว์เซอร์เดียวกัน แล้วเปิดลิงก์ ?t= → ผูก touchpoint

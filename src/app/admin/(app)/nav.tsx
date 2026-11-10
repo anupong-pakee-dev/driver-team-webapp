@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 // เมนูตาม §3 · รายการที่ยังไม่สร้างแสดงเฟสที่จะมา
 const ITEMS: { href?: string; label: string; phase?: number }[] = [
   { href: "/admin", label: "กล่องงานวันนี้" },
+  { href: "/admin/usage", label: "ภาพรวมการใช้งาน" },
   { href: "/admin/quotes", label: "ใบเสนอราคา" },
   { href: "/admin/bookings", label: "การจอง / การเงิน" },
   { href: "/admin/payouts", label: "จ่ายเงินคนขับ" },

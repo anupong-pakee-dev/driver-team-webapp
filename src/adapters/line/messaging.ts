@@ -32,3 +32,16 @@ export function verifySignature(rawBody: string, signature: string | null, secre
   const given = Buffer.from(signature, "base64");
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
+
+/** โควตาข้อความ push ของเดือนนี้ (reply ไม่นับ) — limit null = แพ็กเกจไม่จำกัด/ไม่มีเพดาน */
+export async function messageQuota(): Promise<{ limit: number | null; used: number }> {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) throw new Error("LINE_CHANNEL_ACCESS_TOKEN is not set");
+  const get = async (path: string) => {
+    const res = await fetch(`${API}/${path}`, { headers: { authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`LINE ${path} ${res.status}`);
+    return res.json();
+  };
+  const [q, c] = await Promise.all([get("quota"), get("quota/consumption")]) as [{ type: string; value?: number }, { totalUsage: number }];
+  return { limit: q.type === "limited" ? q.value ?? null : null, used: c.totalUsage };
+}

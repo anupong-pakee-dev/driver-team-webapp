@@ -381,6 +381,7 @@ export const en: Messages = {
       "Data we keep: name, phone, LINE user ID, trip details and payments — to provide the service, issue receipts and contact you on the travel day.",
       "Drivers see the name/phone only for their own job, close to pickup time; every view is logged.",
       "Ad-measurement cookies are used only with your consent; data sent to ad platforms is hashed first.",
+      "We count visits anonymously (no cookies, no IP address stored) to see which pages are used.",
       "Data is processed in the cloud in a region near Thailand (e.g. Singapore).",
       "To see, correct or delete your data, or withdraw consent: message us on LINE.",
     ],

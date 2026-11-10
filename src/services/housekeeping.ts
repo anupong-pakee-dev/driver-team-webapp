@@ -11,7 +11,9 @@ export async function cleanup() {
   const routes = await pool.query(
     `delete from route_cache where created_at < now() - make_interval(days => coalesce((select (value #>> '{}')::int from settings where key = 'route_cache_days'), 7))`);
   const runs = await pool.query(`delete from job_runs where started < now() - interval '30 days'`);
-  return { idempotency_keys: idem.rowCount, rate_limits: rate.rowCount, route_cache: routes.rowCount, job_runs: runs.rowCount };
+  // สถิติผู้เข้าชม (ไม่ระบุตัวตน) เก็บ 13 เดือนพอเทียบปีต่อปี
+  const views = await pool.query(`delete from page_views where at < now() - interval '400 days'`);
+  return { idempotency_keys: idem.rowCount, rate_limits: rate.rowCount, route_cache: routes.rowCount, job_runs: runs.rowCount, page_views: views.rowCount };
 }
 
 /**
