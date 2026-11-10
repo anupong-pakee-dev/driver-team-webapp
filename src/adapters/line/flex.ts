@@ -1,4 +1,6 @@
-// §9.1 Flex Message ใบเสนอราคา (FR-QUOTE-01) — ไม่มีข้อมูลส่วนบุคคลในข้อความ มีแค่ลิงก์ไปหน้าที่ตรวจสิทธิ์
+import type { Messages } from "@/i18n";
+
+// §9.1 Flex Message ใบเสนอราคา (FR-QUOTE-01) — ไม่มีข้อมูลส่วนบุคคลในข้อความ มีแค่ลิงก์ไปหน้าที่ตรวจสิทธิ์ · ข้อความตามภาษาลูกค้า
 
 const NAVY = "#13294B";
 const AMBER = "#F2A900";
@@ -17,7 +19,7 @@ export function quoteFlex(q: {
   depositSatang: number;
   expiresText: string;
   url: string;
-}) {
+}, t: Messages["line"]) {
   const row = (label: string, value: string, bold = false) => ({
     type: "box", layout: "baseline", spacing: "sm",
     contents: [
@@ -27,31 +29,31 @@ export function quoteFlex(q: {
   });
   return {
     type: "flex",
-    altText: `ใบเสนอราคา ${q.number} · ${baht(q.finalSatang)}`,
+    altText: t.quoteAlt(q.number, baht(q.finalSatang)),
     contents: {
       type: "bubble",
       header: {
         type: "box", layout: "vertical", backgroundColor: NAVY, paddingAll: "16px",
         contents: [
-          { type: "text", text: "ใบเสนอราคา", color: "#F6C75A", size: "sm" },
+          { type: "text", text: t.quote, color: "#F6C75A", size: "sm" },
           { type: "text", text: `${q.number}${q.revision > 1 ? ` rev.${q.revision}` : ""}`, color: "#FFFFFF", weight: "bold", size: "lg" },
         ],
       },
       body: {
         type: "box", layout: "vertical", spacing: "sm",
         contents: [
-          row("บริการ", `${q.serviceLabel} · ${q.carLabel}`),
-          row("เส้นทาง", q.route),
-          row("วันเวลา", q.pickupText),
+          row(t.service, `${q.serviceLabel} · ${q.carLabel}`),
+          row(t.route, q.route),
+          row(t.when, q.pickupText),
           { type: "separator", margin: "md" },
-          row("ราคา", baht(q.finalSatang), true),
-          row("มัดจำ", baht(q.depositSatang)),
-          { type: "text", text: `รวมน้ำมันและคนขับ · ไม่รวมทางด่วน/ที่จอด · หมดอายุ ${q.expiresText}`, size: "xs", color: "#5B6575", wrap: true, margin: "md" },
+          row(t.price, baht(q.finalSatang), true),
+          row(t.deposit, baht(q.depositSatang)),
+          { type: "text", text: t.quoteNote(q.expiresText), size: "xs", color: "#5B6575", wrap: true, margin: "md" },
         ],
       },
       footer: {
         type: "box", layout: "vertical",
-        contents: [{ type: "button", style: "primary", color: AMBER, action: { type: "uri", label: "ดูใบเสนอราคา", uri: q.url } }],
+        contents: [{ type: "button", style: "primary", color: AMBER, action: { type: "uri", label: t.viewQuote, uri: q.url } }],
       },
     },
   };

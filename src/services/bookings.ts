@@ -8,6 +8,7 @@ import { cancellation, type CancelBy, type CancelPolicy } from "@/domain/cancell
 import { estimatedEnd } from "@/domain/quotes";
 import { checkSlip } from "@/domain/slip";
 import { canTransition, type BookingStatus, type TransitionActor } from "@/domain/transitions";
+import { isLocale, messages, type Locale } from "@/i18n";
 import type { SessionUser } from "@/lib/auth";
 import { encryptField, normalizeThaiPhone, phoneHash } from "@/lib/crypto";
 import { pool, SYSTEM, withTx, type Actor, type Db } from "@/lib/db";
@@ -57,9 +58,12 @@ export async function transition(db: Db, bookingId: string, to: BookingStatus, a
   return b.status as BookingStatus;
 }
 
-export async function notifyUser(db: Db, userId: string, text: string, dedupe: string) {
-  const { rows } = await db.query(`select line_user_id from users where id = $1`, [userId]);
-  if (rows[0]?.line_user_id) await enqueue(db, "line.push", { to: rows[0].line_user_id, messages: [{ type: "text", text }] }, dedupe);
+/** ส่งข้อความ LINE ถึงผู้ใช้ · ส่งฟังก์ชัน (ภาษา → ข้อความ) เพื่อให้ลูกค้าได้รับตามภาษาในบัญชี (users.locale) */
+export async function notifyUser(db: Db, userId: string, text: string | ((locale: Locale) => string), dedupe: string) {
+  const { rows } = await db.query(`select line_user_id, locale from users where id = $1`, [userId]);
+  const locale: Locale = isLocale(rows[0]?.locale) ? rows[0].locale : "th";
+  const body = typeof text === "function" ? text(locale) : text;
+  if (rows[0]?.line_user_id) await enqueue(db, "line.push", { to: rows[0].line_user_id, messages: [{ type: "text", text: body }] }, dedupe);
 }
 
 export async function notifyRoles(db: Db, roles: string[], text: string, dedupe: string) {
@@ -212,12 +216,12 @@ async function markVerified(db: Db, paymentId: string, patch: { method?: string;
     await transition(db, b.id, "confirmed", "system");
     // §6.3: แจ้งลูกค้า + แอดมิน · เริ่ม dispatch (เฟส 5) · conversion Purchase (เฟส 6)
     await notifyUser(db, b.customer_id,
-      `ยืนยันการจองแล้ว ✓ รับมัดจำ ${amount}\nวันเดินทาง ${formatBangkok(b.pickup_at)}\nใบเสร็จ: ${customerLink(`/receipts/${receiptId}`)}`,
+      (l) => messages(l).line.confirmed(amount, formatBangkok(b.pickup_at, l), customerLink(`/receipts/${receiptId}`)),
       `confirmed:${b.id}`);
     await notifyRoles(db, ["sales_admin", "owner"], `[งานใหม่] ยืนยันมัดจำ ${amount} · ${formatBangkok(b.pickup_at)}`, `confirmed-staff:${b.id}`);
     await dispatchNext(db, b.id);
   } else {
-    await notifyUser(db, b.customer_id, `รับชำระ ${amount} แล้ว ✓\nใบเสร็จ: ${customerLink(`/receipts/${receiptId}`)}`, `paid:${paymentId}`);
+    await notifyUser(db, b.customer_id, (l) => messages(l).line.paid(amount, customerLink(`/receipts/${receiptId}`)), `paid:${paymentId}`);
   }
   return { already: false, bookingId: b.id as string, receiptId };
 }
@@ -369,7 +373,7 @@ export async function cancelBooking(user: SessionUser, bookingId: string, by: Ca
       await notifyRoles(db, ["owner"], `[ต้องโอนคืน] ${formatBaht(r.refund)} (${r.rule}) — ${reason}`, `refund:${refundId}`);
     }
     await notifyUser(db, b.customer_id,
-      `ยกเลิกการจองแล้ว${r.refund > 0 ? `\nยอดคืน ${formatBaht(r.refund)} — ทีมงานจะโอนคืนและแจ้งอีกครั้ง` : ""}`, `cancelled:${bookingId}`);
+      (l) => messages(l).line.cancelled(r.refund > 0 ? formatBaht(r.refund) : null), `cancelled:${bookingId}`);
     // ปิด offer + แจ้งคนขับ (เฟส 5)
     return { status: "cancelled", refund_satang: r.refund, driver_satang: r.driver, rule: r.rule, refund_payment_id: refundId };
   });
@@ -388,7 +392,7 @@ export async function markRefundPaid(owner: SessionUser, paymentId: string, proo
         where id = $1 and kind = 'refund' and status = 'pending' returning booking_id, amount_satang`, [paymentId, path, owner.id]);
     if (!rows[0]) throw new BizError("INVALID_TRANSITION");
     const { rows: b } = await db.query(`select customer_id from bookings where id = $1`, [rows[0].booking_id]);
-    await notifyUser(db, b[0].customer_id, `โอนคืน ${formatBaht(Number(rows[0].amount_satang))} แล้ว ✓`, `refunded:${paymentId}`);
+    await notifyUser(db, b[0].customer_id, (l) => messages(l).line.refunded(formatBaht(Number(rows[0].amount_satang))), `refunded:${paymentId}`);
     return { status: "refunded" };
   });
 }
@@ -406,7 +410,7 @@ export async function expireUnpaid() {
     for (const b of rows) {
       await transition(db, b.id, "expired", "system");
       await db.query(`update payments set status = 'failed', reason = 'EXPIRED' where booking_id = $1 and status = 'pending'`, [b.id]);
-      await notifyUser(db, b.customer_id, "การจองหมดเวลาชำระมัดจำ — ขอใบเสนอราคาใหม่ได้ในแอป", `expired:${b.id}`);
+      await notifyUser(db, b.customer_id, (l) => messages(l).line.expired, `expired:${b.id}`);
     }
     return { expired: rows.length };
   });

@@ -2,27 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { apiErrorText } from "@/i18n";
 import { formatBaht } from "@/lib/money";
+import { useI18n } from "@/components/I18nProvider";
 import { btnPrimary, btnSecondary, input } from "@/components/ui";
-
-const SLIP_TH: Record<string, string> = {
-  AMOUNT_MISMATCH: "ยอดในสลิปน้อยกว่ายอดที่ต้องชำระ — ทีมงานจะตรวจสอบ",
-  RECEIVER_MISMATCH: "บัญชีผู้รับไม่ตรงกับบัญชีบริษัท — ทีมงานจะตรวจสอบ",
-  DUPLICATE: "สลิปนี้เคยใช้แล้ว — ทีมงานจะตรวจสอบ",
-  TOO_OLD: "เวลาโอนไม่ตรงกับรายการนี้ — ทีมงานจะตรวจสอบ",
-};
 
 // adapter ข: ส่งรูปสลิป · local มีปุ่มจำลองสลิปที่ถูกต้อง (ไม่มีผู้ให้บริการตรวจสลิป)
 export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: string; dev: boolean; amount: number; receiver: string }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const sl = t.slip;
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function done(res: Response) {
     const out = await res.json().catch(() => null);
     setBusy(false);
-    if (!res.ok) return setMsg(out?.error?.code === "RATE_LIMITED" ? "ส่งสลิปบ่อยเกินไป ลองใหม่ภายหลัง" : out?.error?.message_th ?? "ส่งไม่สำเร็จ");
-    setMsg(out.status === "verified" ? "ชำระสำเร็จ ✓" : SLIP_TH[out.reason] ?? "ได้รับสลิปแล้ว รอเจ้าหน้าที่ตรวจ");
+    if (!res.ok) return setMsg(out?.error?.code === "RATE_LIMITED" ? sl.tooOften : apiErrorText(out, locale) ?? sl.failed);
+    setMsg(out.status === "verified" ? sl.success : (out.reason !== "MANUAL_REVIEW" && t.slipReason[out.reason]) || sl.received);
     router.refresh();
   }
 
@@ -33,7 +30,7 @@ export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: st
         onSubmit={async (e) => {
           e.preventDefault();
           const file = new FormData(e.currentTarget).get("file");
-          if (!(file instanceof File) || !file.size) return setMsg("เลือกรูปสลิปก่อน");
+          if (!(file instanceof File) || !file.size) return setMsg(sl.chooseFirst);
           const body = new FormData();
           body.set("file", file);
           setBusy(true);
@@ -41,10 +38,10 @@ export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: st
         }}
       >
         <label className="block space-y-1">
-          <span className="text-sm font-medium">โอนแล้ว? ส่งรูปสลิป</span>
+          <span className="text-sm font-medium">{sl.label}</span>
           <input name="file" type="file" accept="image/jpeg,image/png,image/webp" className="block w-full text-sm" />
         </label>
-        <button className={`${btnPrimary} w-full`} disabled={busy}>{busy ? "กำลังตรวจ…" : "ส่งสลิป"}</button>
+        <button className={`${btnPrimary} w-full`} disabled={busy}>{busy ? sl.checking : sl.send}</button>
       </form>
       {dev && (
         <button
@@ -58,7 +55,7 @@ export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: st
             }));
           }}
         >
-          [local] จำลองสลิปที่ถูกต้อง
+          {sl.dev}
         </button>
       )}
       {msg && <p className="text-center text-sm text-navy">{msg}</p>}
@@ -68,6 +65,7 @@ export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: st
 
 export function OpenBalance({ bookingId, amount }: { bookingId: string; amount: number }) {
   const router = useRouter();
+  const { t } = useI18n();
   return (
     <button
       className={`${btnPrimary} w-full`}
@@ -76,7 +74,7 @@ export function OpenBalance({ bookingId, amount }: { bookingId: string; amount: 
         router.refresh();
       }}
     >
-      ชำระยอดคงเหลือ {formatBaht(amount)}
+      {t.balance.pay(formatBaht(amount))}
     </button>
   );
 }
@@ -84,6 +82,8 @@ export function OpenBalance({ bookingId, amount }: { bookingId: string; amount: 
 // FR-BOOK-06: แสดงยอดคืนก่อนยืนยัน
 export function CancelBooking({ bookingId }: { bookingId: string }) {
   const router = useRouter();
+  const { t } = useI18n();
+  const c = t.cancel;
   const [preview, setPreview] = useState<{ refund_satang: number; paid_satang: number; rule: string } | null>(null);
   const [reason, setReason] = useState("");
   const [key] = useState(() => crypto.randomUUID());
@@ -95,19 +95,18 @@ export function CancelBooking({ bookingId }: { bookingId: string }) {
         const res = await fetch(`/api/bookings/${bookingId}/cancellation-preview`);
         if (res.ok) setPreview(await res.json());
       }}>
-        ขอยกเลิกการจอง
+        {c.ask}
       </button>
     );
   }
-  const RULE: Record<string, string> = { ">48h": "ยกเลิกก่อน 48 ชม.", "24-48h": "ยกเลิก 24–48 ชม. ก่อนเดินทาง", "<24h": "ยกเลิกน้อยกว่า 24 ชม." };
   return (
     <div className="space-y-3">
-      <h3 className="font-bold">ยืนยันยกเลิก?</h3>
+      <h3 className="font-bold">{c.confirmTitle}</h3>
       <p className="text-sm">
-        {RULE[preview.rule] ?? preview.rule} · ชำระแล้ว {formatBaht(preview.paid_satang)} ·{" "}
-        <b>ได้คืน {formatBaht(preview.refund_satang)}</b>
+        {t.cancelRule[preview.rule] ?? preview.rule} · {c.paid(formatBaht(preview.paid_satang))} ·{" "}
+        <b>{c.refund(formatBaht(preview.refund_satang))}</b>
       </p>
-      <input className={input} placeholder="เหตุผล" value={reason} onChange={(e) => setReason(e.target.value)} />
+      <input className={input} placeholder={c.reasonPh} value={reason} onChange={(e) => setReason(e.target.value)} />
       {error && <p className="text-sm text-bad">{error}</p>}
       <div className="flex gap-2">
         <button className="flex-1 rounded-[var(--radius-btn)] bg-bad px-4 py-3 font-bold text-white disabled:opacity-50" disabled={reason.trim().length < 2}
@@ -116,12 +115,12 @@ export function CancelBooking({ bookingId }: { bookingId: string }) {
               method: "POST", headers: { "content-type": "application/json", "idempotency-key": key },
               body: JSON.stringify({ reason }),
             });
-            if (!res.ok) return setError("ยกเลิกไม่ได้ในสถานะนี้ — ติดต่อแอดมิน");
+            if (!res.ok) return setError(c.notAllowed);
             router.refresh();
           }}>
-          ยืนยันยกเลิก
+          {c.confirm}
         </button>
-        <button className={`${btnSecondary} flex-1`} onClick={() => setPreview(null)}>ไม่ยกเลิก</button>
+        <button className={`${btnSecondary} flex-1`} onClick={() => setPreview(null)}>{c.keep}</button>
       </div>
     </div>
   );

@@ -6,12 +6,12 @@ import {
   CHARTER_SERVICES, QUOTE_EXCLUDES, QUOTE_INCLUDES, normalizeFlightNo, validateQuoteRequest,
   type Place, type QuoteRequest, type ServiceType,
 } from "@/domain/quotes";
+import { isLocale, messages, type Locale } from "@/i18n";
 import type { SessionUser } from "@/lib/auth";
 import { pool, SYSTEM, withTx, type Db } from "@/lib/db";
 import { BizError } from "@/lib/errors";
 import { getSettings, type CatalogSettings } from "@/lib/settings";
 import { formatBangkok } from "@/lib/time";
-import { carLabel, SERVICE_TYPES } from "./portal";
 import { enqueue } from "./outbox";
 import { invalidateCatalog } from "./catalog";
 import { touchesFor } from "./ads";
@@ -42,15 +42,13 @@ export type CreateQuoteInput = {
 
 type Airport = { name: string; lat: number; lng: number };
 
-const serviceLabel = (s: string) => SERVICE_TYPES.find((x) => x.value === s)?.label ?? s;
-
 /** พิกัดต้องอยู่ในไทย · ไม่มีชื่อ = แสดงพิกัดแทน (คนขับนำทางจากพิกัดเสมอ) */
 function toPlace(p: PointInput | undefined): Place | null {
   if (!p) return null;
   if (!inThailand(p)) throw new BizError("VALIDATION", { field: "place", problem: "outside_thailand" });
   const lat = Math.round(p.lat * 1e6) / 1e6;
   const lng = Math.round(p.lng * 1e6) / 1e6;
-  const name = p.name?.trim() || `ตำแหน่งที่ปักไว้ (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+  const name = p.name?.trim() || `📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   return { name, lat, lng, source: p.source };
 }
 
@@ -166,12 +164,14 @@ export async function createQuote(actor: SessionUser, input: CreateQuoteInput) {
 async function notifyCustomer(db: Db, quoteId: string) {
   const { rows } = await db.query(
     `select q.id, q.number, q.revision, q.service_type, q.car_type, q.origin, q.destination, q.pickup_at,
-            q.final_satang::int, q.expires_at, u.line_user_id
+            q.final_satang::int, q.expires_at, u.line_user_id, u.locale
        from quotes q join users u on u.id = q.customer_id where q.id = $1`,
     [quoteId],
   );
   const q = rows[0];
   if (!q?.line_user_id) return;
+  const locale: Locale = isLocale(q.locale) ? q.locale : "th";
+  const t = messages(locale);
   const { rows: d } = await db.query(`select value from settings where key = 'deposit_pct'`);
   const base = process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER
     ? `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER}/quotes/${q.id}`
@@ -180,12 +180,12 @@ async function notifyCustomer(db: Db, quoteId: string) {
     to: q.line_user_id,
     messages: [quoteFlex({
       number: q.number, revision: q.revision,
-      serviceLabel: serviceLabel(q.service_type), carLabel: carLabel(q.car_type),
+      serviceLabel: t.service[q.service_type] ?? q.service_type, carLabel: t.car[q.car_type] ?? q.car_type,
       route: [q.origin?.name, q.destination?.name].filter(Boolean).join(" → "),
-      pickupText: formatBangkok(q.pickup_at), finalSatang: q.final_satang,
+      pickupText: formatBangkok(q.pickup_at, locale), finalSatang: q.final_satang,
       depositSatang: depositFor(q.final_satang, Number(d[0]?.value ?? 0.3)),
-      expiresText: formatBangkok(q.expires_at), url: base,
-    })],
+      expiresText: formatBangkok(q.expires_at, locale), url: base,
+    }, t.line)],
   }, `quote:${q.id}`);
 }
 
@@ -273,13 +273,16 @@ export async function expireQuotes() {
          from users u
         where u.id = q.customer_id and q.status = 'sent' and q.reminded_at is null
           and q.expires_at > now() and q.expires_at <= now() + interval '2 hours'
-        returning q.id, q.number, q.expires_at, u.line_user_id`,
+        returning q.id, q.number, q.expires_at, u.line_user_id, u.locale`,
     );
     for (const r of rows) {
       if (!r.line_user_id) continue;
       await enqueue(db, "line.push", {
         to: r.line_user_id,
-        messages: [{ type: "text", text: `ใบเสนอราคา ${r.number} จะหมดอายุ ${formatBangkok(r.expires_at)} — ยืนยันการจองก่อนหมดเวลาเพื่อล็อกราคา` }],
+        messages: [{ type: "text", text: (() => {
+          const l: Locale = isLocale(r.locale) ? r.locale : "th";
+          return messages(l).line.quoteExpiring(r.number, formatBangkok(r.expires_at, l));
+        })() }],
       }, `quote-remind:${r.id}`);
     }
     return { expired, reminded: rows.length };

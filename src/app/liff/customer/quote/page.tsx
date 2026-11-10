@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { currentUser } from "@/lib/auth";
 import { devLoginEnabled } from "@/lib/dev";
+import { getI18n } from "@/lib/locale";
 import { getSetting } from "@/lib/settings";
 import { bangkokLocalInput } from "@/lib/time";
 import { quoteFormOptions } from "@/services/quoteForm";
 import { LiffLogin } from "@/components/LiffLogin";
 import { QuoteForm } from "@/components/QuoteForm";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { AppHeader, Panel } from "@/components/ui";
 import { ClaimTouchpoint } from "./claim";
 
@@ -14,21 +16,22 @@ export const dynamic = "force-dynamic";
 // FR-BOOK-01/02 ฟอร์มขอราคา (ลูกค้า) — ค่าเริ่มจากแคตตาล็อก ?service=&car=
 export default async function QuoteRequestPage({ searchParams }: PageProps<"/liff/customer/quote">) {
   const sp = await searchParams;
+  const { t, locale } = await getI18n();
   const user = await currentUser();
   if (!user) {
     return (
       <div className="mx-auto w-full max-w-md">
-        <AppHeader title="ขอใบเสนอราคา" subtitle="เข้าสู่ระบบด้วย LINE เพื่อรับใบเสนอราคาในแชท" />
+        <AppHeader title={t.quoteForm.title} subtitle={t.quoteForm.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5">
           <LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} />
         </main>
       </div>
     );
   }
-  const [options, lead] = await Promise.all([quoteFormOptions(true), getSetting<number>("quote_min_lead_minutes")]);
+  const [options, lead] = await Promise.all([quoteFormOptions(true, locale), getSetting<number>("quote_min_lead_minutes")]);
   return (
     <div className="mx-auto w-full max-w-md">
-      <AppHeader title="ขอใบเสนอราคา" subtitle="รู้ราคาทันที ใบเสนอราคาส่งเข้า LINE" />
+      <AppHeader title={t.quoteForm.title} subtitle={t.quoteForm.subtitle} right={<LanguageSwitcher />} />
       <main className="px-5 py-4 pb-10">
         {typeof sp.t === "string" && /^[0-9a-f-]{36}$/.test(sp.t) && <ClaimTouchpoint touchpointId={sp.t} />}
         <Panel>

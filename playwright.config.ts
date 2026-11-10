@@ -13,6 +13,7 @@ export default defineConfig({
   reporter: ci ? "github" : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    locale: "th-TH", // ฝั่งลูกค้าเลือกภาษาจาก Accept-Language — เทสต์เดิมเขียนด้วยข้อความไทย (06-i18n ทดสอบภาษาอื่น)
     trace: "retain-on-failure",
   },
   projects: [{ name: "mobile", use: { ...devices["Pixel 7"], ...(ci ? {} : { channel: "msedge" }) } }],

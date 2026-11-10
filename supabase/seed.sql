@@ -76,24 +76,24 @@ insert into settings (key, value) values
   ('airports', '{"BKK":{"place_id":"stub:BKK","name":"ท่าอากาศยานสุวรรณภูมิ (BKK)","lat":13.69,"lng":100.7501},
                  "DMK":{"place_id":"stub:DMK","name":"ท่าอากาศยานดอนเมือง (DMK)","lat":13.9126,"lng":100.6068}}'),
   ('charter_hours',            '{"hourly_charter":[5,10],"daily_charter":[10],"driver_only":[5,10]}'),
-  ('brand',                    '{"name_th":"Avera Taxi Thailand","name_en":"Avera Taxi Thailand"}'),
+  ('brand',                    '{"name_th":"Avera Taxi Thailand","name_en":"Avera Taxi Thailand","name_zh":"Avera Taxi Thailand"}'),
   -- ข้อความแคตตาล็อกต่อประเภทรถ (FR-CAT-01) — ที่นั่ง/กระเป๋าที่โฆษณา ไม่ใช่ของรถคันใดคันหนึ่ง
   ('catalog', '{
      "tabs": [
-       {"service_type":"airport_transfer","label_th":"สนามบิน","label_en":"Airport",
+       {"service_type":"airport_transfer","label_th":"สนามบิน","label_en":"Airport","label_zh":"机场接送","note_zh":"机场 ↔ 曼谷 · 按趟计价，含油费和司机",
         "note_th":"สนามบิน ↔ กรุงเทพฯ · ราคาต่อเที่ยว รวมน้ำมันและคนขับ","note_en":"Airport ↔ Bangkok · per trip, fuel and driver included"},
-       {"service_type":"daily_charter","label_th":"เหมารายวัน","label_en":"Daily",
+       {"service_type":"daily_charter","label_th":"เหมารายวัน","label_en":"Daily","label_zh":"按天包车","note_zh":"全天包车 10 小时 · 含油费和司机",
         "note_th":"เหมาทั้งวัน 10 ชม. · รวมน้ำมันและคนขับ","note_en":"Full day, 10 hrs · fuel and driver included"},
-       {"service_type":"point_to_point","label_th":"ต่างจังหวัด","label_en":"Upcountry",
+       {"service_type":"point_to_point","label_th":"ต่างจังหวัด","label_en":"Upcountry","label_zh":"跨府长途","note_zh":"曼谷 ↔ 外府 · 按距离计价",
         "note_th":"กรุงเทพฯ ↔ ต่างจังหวัด · ราคาตามระยะทาง","note_en":"Bangkok ↔ provinces · priced by distance"}
      ],
      "cars": {
-       "sedan":       {"name_th":"รถเก๋ง","name_en":"Sedan","seats":3,"luggage":2},
-       "suv":         {"name_th":"SUV 7 ที่นั่ง","name_en":"7-seat SUV","seats":6,"luggage":4},
-       "van":         {"name_th":"รถตู้","name_en":"Van","seats_label":"9–13","seats":13,"luggage":6},
-       "van_vip":     {"name_th":"รถตู้ VIP","name_en":"VIP van","seats_label":"9–10","seats":10,"luggage":8},
-       "mpv_premium": {"name_th":"MPV พรีเมียม","name_en":"Premium MPV","seats":6,"luggage":4},
-       "driver_only": {"name_th":"คนขับอย่างเดียว","name_en":"Driver only","desc_th":"ขับรถของคุณ","desc_en":"Drives your car"}
+       "sedan":       {"name_th":"รถเก๋ง","name_en":"Sedan","name_zh":"轿车","seats":3,"luggage":2},
+       "suv":         {"name_th":"SUV 7 ที่นั่ง","name_en":"7-seat SUV","name_zh":"7 座 SUV","seats":6,"luggage":4},
+       "van":         {"name_th":"รถตู้","name_en":"Van","name_zh":"面包车","seats_label":"9–13","seats":13,"luggage":6},
+       "van_vip":     {"name_th":"รถตู้ VIP","name_en":"VIP van","name_zh":"VIP 商务车","seats_label":"9–10","seats":10,"luggage":8},
+       "mpv_premium": {"name_th":"MPV พรีเมียม","name_en":"Premium MPV","name_zh":"豪华 MPV","seats":6,"luggage":4},
+       "driver_only": {"name_th":"คนขับอย่างเดียว","name_en":"Driver only","name_zh":"仅代驾司机","desc_th":"ขับรถของคุณ","desc_en":"Drives your car","desc_zh":"驾驶您的车辆"}
      },
      "order": ["sedan","suv","van_vip","driver_only"]
    }');

@@ -4,8 +4,11 @@ export const TZ = "Asia/Bangkok";
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 
-export function formatBangkok(d: Date | string, locale: "th" | "en" = "th"): string {
-  return new Intl.DateTimeFormat(locale === "th" ? "th-TH" : "en-GB", {
+const INTL: Record<"th" | "en" | "zh", string> = { th: "th-TH", en: "en-GB", zh: "zh-CN" };
+
+/** ไทยแสดงปี พ.ศ. · อังกฤษ/จีนแสดงปี ค.ศ. — เวลาไทยเสมอ */
+export function formatBangkok(d: Date | string, locale: "th" | "en" | "zh" = "th"): string {
+  return new Intl.DateTimeFormat(INTL[locale] ?? "th-TH", {
     timeZone: TZ,
     dateStyle: "medium",
     timeStyle: "short",

@@ -3,6 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
+import { useI18n } from "./I18nProvider";
 import { btnPrimary, btnSecondary } from "./ui";
 
 // ปักหมุดบนแผนที่ OpenStreetMap (ฟรี ไม่ใช้ key) — หมุดอยู่กลางจอ เลื่อนแผนที่ให้หมุดตรงจุด
@@ -17,6 +18,8 @@ export function MapPicker({
   onConfirm: (p: { lat: number; lng: number }) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
+  const L = t.location;
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
   const [center, setCenter] = useState(initial ?? BANGKOK);
@@ -62,10 +65,10 @@ export function MapPicker({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-card" role="dialog" aria-modal="true" aria-label="ปักหมุดบนแผนที่">
+    <div className="fixed inset-0 z-50 flex flex-col bg-card" role="dialog" aria-modal="true" aria-label={L.mapLabel}>
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <p className="text-sm font-medium">เลื่อนแผนที่ให้หมุดตรงจุดที่ต้องการ</p>
-        <button type="button" className="text-sm text-muted" onClick={onClose}>ปิด</button>
+        <p className="text-sm font-medium">{L.mapTitle}</p>
+        <button type="button" className="text-sm text-muted" onClick={onClose}>{L.close}</button>
       </div>
       <div className="relative flex-1">
         <div ref={el} className="absolute inset-0" />
@@ -76,14 +79,14 @@ export function MapPicker({
         </svg>
         <button type="button" onClick={locate} disabled={locating}
           className="absolute bottom-4 right-4 z-[1000] rounded-full border border-line bg-card px-4 py-2 text-sm font-medium shadow">
-          {locating ? "กำลังหาตำแหน่ง…" : "📍 ตำแหน่งปัจจุบัน"}
+          {locating ? L.locating : L.gps}
         </button>
       </div>
       <div className="space-y-2 border-t border-line px-4 py-3">
         <p className="text-center text-xs text-muted">{center.lat.toFixed(5)}, {center.lng.toFixed(5)}</p>
         <div className="flex gap-2">
-          <button type="button" className={`${btnSecondary} flex-1`} onClick={onClose}>ยกเลิก</button>
-          <button type="button" className={`${btnPrimary} flex-1`} onClick={() => onConfirm(center)}>ใช้ตำแหน่งนี้</button>
+          <button type="button" className={`${btnSecondary} flex-1`} onClick={onClose}>{t.common.cancel}</button>
+          <button type="button" className={`${btnPrimary} flex-1`} onClick={() => onConfirm(center)}>{L.useHere}</button>
         </div>
       </div>
     </div>

@@ -3,24 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { QuoteFormOptions } from "@/services/quoteForm";
+import { apiErrorText } from "@/i18n";
 import { formatBaht } from "@/lib/money";
+import { useI18n } from "./I18nProvider";
 import { LocationInput, type PickedPlace } from "./LocationInput";
 import { btnPrimary, btnSecondary, input } from "./ui";
 
-const RULE_TH: Record<string, string> = {
-  PAX_EXCEEDS_SEATS: "จำนวนผู้โดยสารเกินที่นั่งของรถประเภทนี้",
-  LUGGAGE_EXCEEDS_CAPACITY: "จำนวนกระเป๋าเกินความจุของรถประเภทนี้",
-  FLIGHT_REQUIRED: "กรุณากรอกเลขเที่ยวบิน หรือเลือก “ไม่มีเที่ยวบิน”",
-  DESTINATION_REQUIRED: "กรุณาเลือกปลายทาง",
-  HOURS_REQUIRED: "กรุณาเลือกจำนวนชั่วโมง",
-  PICKUP_TOO_SOON: "กรุณาจองล่วงหน้าอย่างน้อย 2 ชั่วโมง",
-  TOO_MANY_STOPS: "จุดแวะได้ไม่เกิน 5 จุด",
-};
-
-const SOURCES = [
-  ["facebook", "Facebook"], ["google", "Google"], ["tiktok", "TikTok"], ["line", "LINE"],
-  ["friend", "เพื่อน/คนรู้จักแนะนำ"], ["repeat", "เคยใช้บริการแล้ว"], ["other", "อื่นๆ"],
-] as const;
+const SOURCES = ["facebook", "google", "tiktok", "line", "friend", "repeat", "other"] as const;
 
 type Customer = { id: string; label: string };
 
@@ -39,6 +28,8 @@ export function QuoteForm({
   customers?: Customer[];
 }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const f = t.quoteForm;
   const services = options.services;
   const [service, setService] = useState(services.find((s) => s.service_type === initialService)?.service_type ?? services[0]?.service_type);
   const svc = services.find((s) => s.service_type === service);
@@ -63,7 +54,7 @@ export function QuoteForm({
   const maxPax = car === "driver_only" ? 15 : carInfo?.seats ?? 15;
   const maxBags = car === "driver_only" ? 20 : carInfo?.luggage ?? 20;
   // ช่องสถานที่ของงานสนามบิน: อีกฝั่งคือสนามบินที่เลือก
-  const addressLabel = isAirport ? (direction === "arrival" ? "ส่งที่ (ปลายทาง)" : "รับที่ (ต้นทาง)") : null;
+  const addressLabel = isAirport ? (direction === "arrival" ? f.dropAt : f.pickupAt) : null;
 
   function chooseService(v: string) {
     setService(v);
@@ -74,15 +65,15 @@ export function QuoteForm({
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
+    const fd = new FormData(e.currentTarget);
     const local: string[] = [];
-    if (isAirport && !destination && direction === "arrival") local.push("กรุณาระบุตำแหน่งจุดส่ง");
-    if (isAirport && !origin && direction === "departure") local.push("กรุณาระบุตำแหน่งจุดรับ");
-    if (!isAirport && !origin) local.push("กรุณาระบุตำแหน่งจุดรับ");
-    if (stops.some((s) => !s)) local.push("กรุณาระบุตำแหน่งจุดแวะให้ครบ หรือลบจุดที่ไม่ใช้");
-    if (!isAirport && !isCharter && !destination) local.push(RULE_TH.DESTINATION_REQUIRED);
-    if (isAirport && !noFlight && !flightNo.trim()) local.push(RULE_TH.FLIGHT_REQUIRED);
-    if (mode === "staff" && !customerId) local.push("กรุณาเลือกลูกค้า");
+    if (isAirport && !destination && direction === "arrival") local.push(f.needDrop);
+    if (isAirport && !origin && direction === "departure") local.push(f.needPickup);
+    if (!isAirport && !origin) local.push(f.needPickup);
+    if (stops.some((s) => !s)) local.push(f.needStops);
+    if (!isAirport && !isCharter && !destination) local.push(t.quoteRule.DESTINATION_REQUIRED);
+    if (isAirport && !noFlight && !flightNo.trim()) local.push(t.quoteRule.FLIGHT_REQUIRED);
+    if (mode === "staff" && !customerId) local.push(f.needCustomer);
     if (local.length) return setErrors(local);
 
     const body = {
@@ -92,16 +83,16 @@ export function QuoteForm({
       origin: isAirport && direction === "arrival" ? undefined : point(origin),
       destination: isAirport && direction === "departure" ? undefined : isCharter ? undefined : point(destination),
       stops: stops.filter(Boolean).map((s) => point(s)!),
-      pickup_at: `${f.get("pickup_at")}:00+07:00`,
+      pickup_at: `${fd.get("pickup_at")}:00+07:00`,
       hours: isCharter ? hours : null,
-      pax: Number(f.get("pax")),
-      luggage: Number(f.get("luggage")),
-      child_seats: Number(f.get("child_seats") ?? 0),
+      pax: Number(fd.get("pax")),
+      luggage: Number(fd.get("luggage")),
+      child_seats: Number(fd.get("child_seats") ?? 0),
       flight: isAirport ? { no: noFlight ? null : flightNo, airport, direction } : null,
       no_flight: isAirport && noFlight,
-      notes: String(f.get("notes") ?? "") || null,
-      source_answer: mode === "customer" ? String(f.get("source") ?? "") || null : null,
-      manual: manual ? { distance_km: Number(f.get("distance_km")), duration_min: Number(f.get("duration_min")) } : null,
+      notes: String(fd.get("notes") ?? "") || null,
+      source_answer: mode === "customer" ? String(fd.get("source") ?? "") || null : null,
+      manual: manual ? { distance_km: Number(fd.get("distance_km")), duration_min: Number(fd.get("duration_min")) } : null,
     };
     setBusy(true);
     setErrors([]);
@@ -114,29 +105,29 @@ export function QuoteForm({
     setBusy(false);
     if (!res.ok) {
       const err = out?.error;
-      if (err?.code === "QUOTE_RULE") return setErrors((err.details.errors as string[]).map((c) => RULE_TH[c] ?? c));
-      return setErrors([err?.message_th ?? "ขอราคาไม่สำเร็จ"]);
+      if (err?.code === "QUOTE_RULE") return setErrors((err.details.errors as string[]).map((c) => t.quoteRule[c] ?? c));
+      return setErrors([apiErrorText(out, locale) ?? f.failed]);
     }
     router.push(mode === "customer" ? `/liff/customer/quotes/${out.id}` : `/admin/quotes/${out.id}`);
     router.refresh();
   }
 
-  if (!svc) return <p className="text-center text-muted">ตอนนี้ยังไม่มีบริการที่เปิดรับจอง</p>;
+  if (!svc) return <p className="text-center text-muted">{f.noServices}</p>;
 
   return (
     <form onSubmit={submit} className="space-y-4">
       {mode === "staff" && (
         <label className="block space-y-1">
-          <span className="text-sm font-medium">ลูกค้า <span className="text-bad">*</span></span>
+          <span className="text-sm font-medium">{f.customer} <span className="text-bad">*</span></span>
           <select className={input} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-            <option value="">เลือกลูกค้า…</option>
+            <option value="">{f.chooseCustomer}</option>
             {customers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
         </label>
       )}
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">บริการ</legend>
+        <legend className="text-sm font-medium">{f.service}</legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {services.map((s) => (
             <button
@@ -154,7 +145,7 @@ export function QuoteForm({
       </fieldset>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">ประเภทรถ</legend>
+        <legend className="text-sm font-medium">{f.carType}</legend>
         <div className="space-y-2">
           {svc.cars.map((c) => (
             <label key={c.car_type}
@@ -164,10 +155,10 @@ export function QuoteForm({
                 <input type="radio" name="car" value={c.car_type} aria-label={c.label} className="accent-navy" checked={c.car_type === car} onChange={() => setCar(c.car_type)} />
                 <span>
                   <span className="block font-medium">{c.label}</span>
-                  {c.seats && <span className="block text-xs text-muted">{c.seats} ที่นั่ง · {c.luggage} กระเป๋า</span>}
+                  {c.seats && <span className="block text-xs text-muted">{t.seats(c.seats, c.luggage ?? 0)}</span>}
                 </span>
               </span>
-              <span className="text-sm">เริ่ม <b>{formatBaht(c.from_satang)}</b></span>
+              <span className="text-sm">{f.from} <b>{formatBaht(c.from_satang)}</b></span>
             </label>
           ))}
         </div>
@@ -177,28 +168,28 @@ export function QuoteForm({
         <div className="space-y-3 rounded-xl bg-page p-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="space-y-1">
-              <span className="text-sm font-medium">สนามบิน</span>
+              <span className="text-sm font-medium">{f.airport}</span>
               <select className={input} value={airport} onChange={(e) => setAirport(e.target.value as "BKK" | "DMK")}>
-                <option value="BKK">BKK สุวรรณภูมิ</option>
-                <option value="DMK">DMK ดอนเมือง</option>
+                <option value="BKK">{f.bkk}</option>
+                <option value="DMK">{f.dmk}</option>
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-sm font-medium">เที่ยว</span>
+              <span className="text-sm font-medium">{f.direction}</span>
               <select className={input} value={direction} onChange={(e) => setDirection(e.target.value as "arrival" | "departure")}>
-                <option value="arrival">ขาเข้า · รับจากสนามบิน</option>
-                <option value="departure">ขาออก · ไปส่งสนามบิน</option>
+                <option value="arrival">{f.arrival}</option>
+                <option value="departure">{f.departure}</option>
               </select>
             </label>
           </div>
           <label className="block space-y-1">
-            <span className="text-sm font-medium">เลขเที่ยวบิน {!noFlight && <span className="text-bad">*</span>}</span>
-            <input className={input} value={flightNo} disabled={noFlight} placeholder="เช่น TG123"
+            <span className="text-sm font-medium">{f.flightNo} {!noFlight && <span className="text-bad">*</span>}</span>
+            <input className={input} value={flightNo} disabled={noFlight} placeholder={f.flightPh}
               onChange={(e) => setFlightNo(e.target.value.toUpperCase())} />
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="h-5 w-5 accent-navy" checked={noFlight} onChange={(e) => setNoFlight(e.target.checked)} />
-            ไม่มีเที่ยวบิน / ยังไม่ทราบ
+            {f.noFlight}
           </label>
         </div>
       )}
@@ -209,32 +200,32 @@ export function QuoteForm({
           : <LocationInput label={addressLabel!} value={origin} onChange={setOrigin} required />
       ) : (
         <>
-          <LocationInput label={isCharter ? "จุดรับ / จุดเริ่ม" : "ต้นทาง"} value={origin} onChange={setOrigin} required />
+          <LocationInput label={isCharter ? f.pickupStart : f.origin} value={origin} onChange={setOrigin} required />
           {stops.map((s, i) => (
             <div key={i} className="space-y-1">
-              <LocationInput label={`จุดแวะ ${i + 1}`} value={s}
+              <LocationInput label={f.stop(i + 1)} value={s}
                 onChange={(p) => setStops(stops.map((x, j) => (j === i ? p : x)))} />
-              <button type="button" className="text-sm text-muted underline" onClick={() => setStops(stops.filter((_, j) => j !== i))}>ลบจุดแวะนี้</button>
+              <button type="button" className="text-sm text-muted underline" onClick={() => setStops(stops.filter((_, j) => j !== i))}>{f.removeStop}</button>
             </div>
           ))}
           {stops.length < 5 && (
-            <button type="button" className="text-sm text-navy underline" onClick={() => setStops([...stops, null])}>+ เพิ่มจุดแวะ</button>
+            <button type="button" className="text-sm text-navy underline" onClick={() => setStops([...stops, null])}>{f.addStop}</button>
           )}
-          {!isCharter && <LocationInput label="ปลายทาง" value={destination} onChange={setDestination} required />}
+          {!isCharter && <LocationInput label={f.destination} value={destination} onChange={setDestination} required />}
         </>
       )}
 
       <div className="grid grid-cols-2 gap-3">
         <label className="col-span-2 block space-y-1 sm:col-span-1">
-          <span className="text-sm font-medium">วันเวลารับ (เวลาไทย) <span className="text-bad">*</span></span>
+          <span className="text-sm font-medium">{f.pickupTime} <span className="text-bad">*</span></span>
           <input name="pickup_at" type="datetime-local" required min={minPickup} className={input} />
         </label>
         {isCharter && (
           <label className="col-span-2 block space-y-1 sm:col-span-1">
-            <span className="text-sm font-medium">จำนวนชั่วโมง</span>
+            <span className="text-sm font-medium">{f.hours}</span>
             {mode === "customer" && svc.hours.length > 0 ? (
               <select className={input} value={hours ?? ""} onChange={(e) => setHours(Number(e.target.value))}>
-                {svc.hours.map((h) => <option key={h} value={h}>{h} ชั่วโมง</option>)}
+                {svc.hours.map((h) => <option key={h} value={h}>{f.hoursOpt(h)}</option>)}
               </select>
             ) : (
               <input type="number" min={1} max={24} className={input} value={hours ?? ""} onChange={(e) => setHours(Number(e.target.value))} />
@@ -245,33 +236,33 @@ export function QuoteForm({
 
       <div className="grid grid-cols-3 gap-3">
         <label className="block space-y-1">
-          <span className="text-sm font-medium">ผู้โดยสาร</span>
+          <span className="text-sm font-medium">{f.pax}</span>
           <input name="pax" type="number" min={1} max={maxPax} defaultValue={1} required className={input} />
         </label>
         <label className="block space-y-1">
-          <span className="text-sm font-medium">กระเป๋าใหญ่</span>
+          <span className="text-sm font-medium">{f.bags}</span>
           <input name="luggage" type="number" min={0} max={maxBags} defaultValue={0} required className={input} />
         </label>
         <label className="block space-y-1">
-          <span className="text-sm font-medium">ที่นั่งเด็ก</span>
+          <span className="text-sm font-medium">{f.childSeats}</span>
           <input name="child_seats" type="number" min={0} max={4} defaultValue={0} className={input} />
         </label>
       </div>
       {car !== "driver_only" && carInfo?.seats && (
-        <p className="-mt-2 text-xs text-muted">รถประเภทนี้รับได้สูงสุด {carInfo.seats} คน · {carInfo.luggage} กระเป๋าใหญ่</p>
+        <p className="-mt-2 text-xs text-muted">{f.carMax(carInfo.seats, carInfo.luggage ?? 0)}</p>
       )}
 
       <label className="block space-y-1">
-        <span className="text-sm font-medium">หมายเหตุ</span>
-        <textarea name="notes" rows={2} maxLength={1000} className={input} placeholder="เช่น มีผู้สูงอายุ ต้องการป้ายชื่อรับ" />
+        <span className="text-sm font-medium">{f.notes}</span>
+        <textarea name="notes" rows={2} maxLength={1000} className={input} placeholder={f.notesPh} />
       </label>
 
       {mode === "customer" && (
         <label className="block space-y-1">
-          <span className="text-sm font-medium">รู้จักเราจากไหน</span>
+          <span className="text-sm font-medium">{f.source}</span>
           <select name="source" className={input} defaultValue="">
-            <option value="">ไม่ระบุ</option>
-            {SOURCES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            <option value="">{f.notSpecified}</option>
+            {SOURCES.map((v) => <option key={v} value={v}>{f.sources[v]}</option>)}
           </select>
         </label>
       )}
@@ -280,12 +271,12 @@ export function QuoteForm({
         <div className="space-y-2 rounded-xl bg-page p-3">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="h-5 w-5 accent-navy" checked={manual} onChange={(e) => setManual(e.target.checked)} />
-            กรอกระยะทางเอง (ใช้เมื่อระยะถนนจริงต่างจากที่ระบบประมาณมาก — บันทึกว่า manual)
+            {f.manual}
           </label>
           {manual && (
             <div className="grid grid-cols-2 gap-3">
-              <input name="distance_km" type="number" min={0} step="0.1" required placeholder="ระยะทาง (กม.)" className={input} />
-              <input name="duration_min" type="number" min={0} required placeholder="เวลาเดินทาง (นาที)" className={input} />
+              <input name="distance_km" type="number" min={0} step="0.1" required placeholder={f.distancePh} className={input} />
+              <input name="duration_min" type="number" min={0} required placeholder={f.durationPh} className={input} />
             </div>
           )}
         </div>
@@ -298,10 +289,10 @@ export function QuoteForm({
       )}
 
       <div className="flex gap-2">
-        <button className={`${btnPrimary} flex-1`} disabled={busy}>{busy ? "กำลังคำนวณราคา…" : "ขอใบเสนอราคา"}</button>
-        {mode === "staff" && <button type="button" className={btnSecondary} onClick={() => router.back()}>ยกเลิก</button>}
+        <button className={`${btnPrimary} flex-1`} disabled={busy}>{busy ? f.submitting : f.submit}</button>
+        {mode === "staff" && <button type="button" className={btnSecondary} onClick={() => router.back()}>{f.back}</button>}
       </div>
-      <p className="text-center text-xs text-muted">ราคารวมน้ำมันและคนขับ · ไม่รวมทางด่วนและค่าจอด (เบิกตามจริง) · ระยะทางประมาณจากตำแหน่งที่ระบุ</p>
+      <p className="text-center text-xs text-muted">{f.footer}</p>
     </form>
   );
 }

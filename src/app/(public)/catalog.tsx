@@ -5,8 +5,12 @@ import { useState } from "react";
 import type { CatalogTab } from "@/services/catalog";
 import { formatBaht } from "@/lib/money";
 import { Card, Close, Menu, Pin, Receipt, ShieldCheck } from "@/components/icons";
+import { useI18n } from "@/components/I18nProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogTab[] }) {
+  const { t } = useI18n();
+  const c = t.catalog;
   const [tabIdx, setTabIdx] = useState(0);
   const tab = tabs[tabIdx];
   const [selected, setSelected] = useState<string | null>(tab?.items[1]?.carType ?? tab?.items[0]?.carType ?? null);
@@ -22,28 +26,31 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
       <header className="bg-navy px-5 pb-8 pt-5 text-white">
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold tracking-tight">{brandName}</span>
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className="grid h-12 w-12 place-items-center rounded-[var(--radius-btn)] border border-white/25"
-            aria-label="เมนู"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="grid h-12 w-12 place-items-center rounded-[var(--radius-btn)] border border-white/25"
+              aria-label={c.menu}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          </div>
         </div>
         <h1 className="mt-7 text-[1.75rem] font-bold leading-snug">
-          เหมารถพร้อมคนขับ
+          {c.headline1}
           <br />
-          รู้ราคาก่อนจอง
+          {c.headline2}
         </h1>
         <p className="mt-2 flex items-center gap-2 text-[0.95rem] text-amber-soft">
           <ShieldCheck className="h-5 w-5 shrink-0" />
-          คนขับทุกคนผ่านการตรวจประวัติและใบขับขี่
+          {c.trust}
         </p>
       </header>
 
       <main className="flex-1 px-5 pb-32 pt-4">
-        <div role="tablist" aria-label="ประเภทบริการ" className="grid grid-cols-3 gap-2">
+        <div role="tablist" aria-label={c.services} className="grid grid-cols-3 gap-2">
           {tabs.map((t, i) => (
             <button
               key={t.serviceType}
@@ -67,11 +74,11 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
 
         {tab && tab.items.length === 0 && (
           <p className="mt-3 rounded-[var(--radius-card)] border border-line bg-card px-4 py-8 text-center text-muted">
-            ตอนนี้ยังไม่มีรถว่างสำหรับบริการนี้ — ทักแชท LINE เพื่อสอบถามได้
+            {c.noCars}
           </p>
         )}
 
-        <ul className="mt-3 space-y-3" role="radiogroup" aria-label="เลือกประเภทรถ">
+        <ul className="mt-3 space-y-3" role="radiogroup" aria-label={c.chooseCar}>
           {tab?.items.map((it) => {
             const on = it.carType === selected;
             return (
@@ -88,14 +95,14 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
                 >
                   <div className="grid h-16 w-20 shrink-0 place-items-center rounded-xl bg-placeholder px-1 text-center text-[0.7rem] leading-tight text-muted">
                     {/* รูปรถจริงจาก bucket public-assets ในเฟส 3 */}
-                    [รูป{it.name}]
+                    {c.photo(it.name)}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-lg font-bold leading-tight">{it.name}</div>
                     <div className="mt-1 text-[0.8rem] text-muted">{it.sub}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-muted">เริ่ม</div>
+                    <div className="text-xs text-muted">{c.from}</div>
                     <div className="text-xl font-bold">{formatBaht(it.fromSatang)}</div>
                   </div>
                 </button>
@@ -107,15 +114,15 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
         <ul className="mt-6 grid grid-cols-3 text-center text-sm text-muted">
           <li className="flex flex-col items-center gap-1.5">
             <Card className="h-6 w-6 text-navy" />
-            มัดจำผ่านระบบ
+            {c.pay}
           </li>
           <li className="flex flex-col items-center gap-1.5">
             <Pin className="h-6 w-6 text-navy" />
-            ติดตามรถสด
+            {c.track}
           </li>
           <li className="flex flex-col items-center gap-1.5">
             <Receipt className="h-6 w-6 text-navy" />
-            มีใบเสร็จ
+            {c.receipt}
           </li>
         </ul>
       </main>
@@ -123,12 +130,12 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-card">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="min-w-0">
-            <div className="truncate text-sm text-muted">เลือกแล้ว: {item?.name ?? "—"}</div>
+            <div className="truncate text-sm text-muted">{c.selected(item?.name ?? "—")}</div>
             <div className="text-xl font-bold">
               {item
                 ? item.toSatang > item.fromSatang
                   ? `${formatBaht(item.fromSatang, { symbol: false })}–${formatBaht(item.toSatang)}`
-                  : `เริ่ม ${formatBaht(item.fromSatang)}`
+                  : `${c.from} ${formatBaht(item.fromSatang)}`
                 : "—"}
             </div>
           </div>
@@ -137,7 +144,7 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
             aria-disabled={!item}
             className="rounded-[var(--radius-btn)] bg-amber px-6 py-3.5 text-base font-bold text-navy shadow-sm active:translate-y-px"
           >
-            ขอใบเสนอราคา
+            {c.cta}
           </Link>
         </div>
       </div>
@@ -147,13 +154,13 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
           <nav
             className="ml-auto flex h-full w-72 max-w-[85%] flex-col gap-1 bg-card p-5"
             onClick={(e) => e.stopPropagation()}
-            aria-label="เมนูหลัก"
+            aria-label={c.mainMenu}
           >
-            <button className="mb-4 self-end p-2" onClick={() => setMenuOpen(false)} aria-label="ปิดเมนู">
+            <button className="mb-4 self-end p-2" onClick={() => setMenuOpen(false)} aria-label={c.closeMenu}>
               <Close className="h-6 w-6" />
             </button>
-            <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/customer">การจองของฉัน</Link>
-            <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/driver">สำหรับคนขับ</Link>
+            <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/customer">{c.myBookings}</Link>
+            <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/driver">{c.forDrivers}</Link>
           </nav>
         </div>
       )}

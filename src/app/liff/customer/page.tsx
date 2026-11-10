@@ -2,9 +2,11 @@ import Link from "next/link";
 import { currentUser } from "@/lib/auth";
 import { asUser } from "@/lib/db";
 import { devLoginEnabled } from "@/lib/dev";
+import { getI18n } from "@/lib/locale";
 import { formatBaht } from "@/lib/money";
 import { formatBangkok } from "@/lib/time";
 import { QUOTE_STATUS_TH } from "@/services/quoteView";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BOOKING_STATUS_TH } from "@/services/bookingView";
 import { LiffLogin } from "@/components/LiffLogin";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -14,11 +16,13 @@ export const dynamic = "force-dynamic";
 
 
 export default async function CustomerHome() {
+  const { t, locale } = await getI18n();
+  const h = t.home;
   const user = await currentUser();
   if (!user) {
     return (
       <div className="mx-auto w-full max-w-md">
-        <AppHeader title="การจองของฉัน" subtitle="เข้าสู่ระบบด้วย LINE" />
+        <AppHeader title={h.title} subtitle={t.common.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5">
           <LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} />
         </main>
@@ -38,28 +42,28 @@ export default async function CustomerHome() {
   return (
     <div className="mx-auto w-full max-w-md">
       <AppHeader
-        title={`สวัสดี ${user.displayName ?? ""}`}
-        subtitle={user.role === "customer" ? "บัญชีลูกค้า" : `บัญชีนี้เป็น ${user.role}`}
-        right={<LogoutButton to="/liff/customer" />}
+        title={h.hello(user.displayName ?? "")}
+        subtitle={user.role === "customer" ? h.customerAccount : h.otherAccount(user.role)}
+        right={<div className="flex flex-col items-end gap-2"><LanguageSwitcher /><LogoutButton to="/liff/customer" /></div>}
       />
       <main className="space-y-4 px-5 py-4">
         <Link href="/liff/customer/quote" className={`${btnPrimary} w-full`}>
-          ขอใบเสนอราคา
+          {h.requestQuote}
         </Link>
 
-        <Panel title="งานของฉัน">
+        <Panel title={h.myTrips}>
           {bookings.length === 0 ? (
-            <Empty>ยังไม่มีการจอง</Empty>
+            <Empty>{h.noBookings}</Empty>
           ) : (
             <ul className="divide-y divide-line">
               {bookings.map((b) => (
                 <li key={b.id}>
                   <Link href={`/liff/customer/bookings/${b.id}`} className="flex items-center justify-between py-3">
                     <div>
-                      <div className="font-medium">{formatBangkok(b.pickup_at)}</div>
+                      <div className="font-medium">{formatBangkok(b.pickup_at, locale)}</div>
                       <div className="text-sm text-muted">{formatBaht(Number(b.price_satang))}</div>
                     </div>
-                    <Badge tone={BOOKING_STATUS_TH[b.status]?.[1] ?? "info"}>{BOOKING_STATUS_TH[b.status]?.[0] ?? b.status}</Badge>
+                    <Badge tone={BOOKING_STATUS_TH[b.status]?.[1] ?? "info"}>{t.bookingStatus[b.status] ?? b.status}</Badge>
                   </Link>
                 </li>
               ))}
@@ -67,9 +71,9 @@ export default async function CustomerHome() {
           )}
         </Panel>
 
-        <Panel title="ใบเสนอราคา">
+        <Panel title={h.quotes}>
           {quotes.length === 0 ? (
-            <Empty>ยังไม่มีใบเสนอราคา</Empty>
+            <Empty>{h.noQuotes}</Empty>
           ) : (
             <ul className="divide-y divide-line">
               {quotes.map((q) => (
@@ -79,11 +83,11 @@ export default async function CustomerHome() {
                     <div className="font-medium">
                       {q.number} {q.revision > 1 && <span className="text-muted">rev.{q.revision}</span>}
                     </div>
-                    <div className="text-sm text-muted">{formatBangkok(q.pickup_at)}</div>
+                    <div className="text-sm text-muted">{formatBangkok(q.pickup_at, locale)}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold">{formatBaht(Number(q.final_satang))}</div>
-                    <Badge tone={QUOTE_STATUS_TH[q.status]?.[1] ?? "info"}>{QUOTE_STATUS_TH[q.status]?.[0] ?? q.status}</Badge>
+                    <Badge tone={QUOTE_STATUS_TH[q.status]?.[1] ?? "info"}>{t.quoteStatus[q.status] ?? q.status}</Badge>
                   </div>
                   </Link>
                 </li>

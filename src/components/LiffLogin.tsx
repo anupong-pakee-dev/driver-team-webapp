@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { apiErrorText } from "@/i18n";
+import { useI18n } from "./I18nProvider";
 import { btnPrimary } from "./ui";
 
 // §9.1 LIFF: init → login → ID token → POST /api/auth/liff → session cookie
 export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver"; liffId?: string; devLogin: boolean }) {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,11 +29,11 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
         const res = await fetch("/api/auth/liff", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ id_token: idToken, app }),
+          body: JSON.stringify({ id_token: idToken, app, lang: liff.getLanguage() }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => null);
-          throw new Error(body?.error?.details?.reason ?? body?.error?.message_th ?? `HTTP ${res.status}`);
+          throw new Error(body?.error?.details?.reason ?? apiErrorText(body, locale) ?? `HTTP ${res.status}`);
         }
         if (!cancelled) router.refresh();
       } catch (e) {
@@ -40,17 +43,17 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
     return () => {
       cancelled = true;
     };
-  }, [app, liffId, router]);
+  }, [app, liffId, router, locale]);
 
   if (liffId) {
     return (
       <div className="py-10 text-center text-muted">
         {error ? (
           <p className="text-bad">
-            เข้าสู่ระบบไม่สำเร็จ: {error === "DRIVER_NOT_INVITED" ? "บัญชี LINE นี้ยังไม่ได้รับเชิญเป็นคนขับ" : error}
+            {t.common.loginFailed(error === "DRIVER_NOT_INVITED" ? "บัญชี LINE นี้ยังไม่ได้รับเชิญเป็นคนขับ" : error)}
           </p>
         ) : (
-          "กำลังเข้าสู่ระบบด้วย LINE…"
+          t.common.signingIn
         )}
       </div>
     );
@@ -58,10 +61,10 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
 
   return (
     <div className="space-y-4 py-6 text-center">
-      <p className="text-muted">ยังไม่ได้ตั้งค่า LIFF ID สำหรับแอป{app === "customer" ? "ลูกค้า" : "คนขับ"}</p>
+      <p className="text-muted">{app === "customer" ? t.common.noLiff : "ยังไม่ได้ตั้งค่า LIFF ID สำหรับแอปคนขับ"}</p>
       {devLogin && (
         <Link className={btnPrimary} href={`/dev/login?next=/liff/${app}`}>
-          เข้าสู่ระบบแบบทดสอบ (local)
+          {t.common.devLogin}
         </Link>
       )}
     </div>

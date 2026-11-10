@@ -3,26 +3,26 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { log } from "./redact";
 
-type Def = { status: number; th: string; en: string };
+type Def = { status: number; th: string; en: string; zh: string };
 
 export const ERRORS = {
-  VALIDATION: { status: 400, th: "ข้อมูลไม่ถูกต้อง", en: "Invalid request" },
-  UNAUTHENTICATED: { status: 401, th: "กรุณาเข้าสู่ระบบ", en: "Please sign in" },
-  FORBIDDEN: { status: 403, th: "ไม่มีสิทธิ์", en: "Forbidden" },
-  NOT_FOUND: { status: 404, th: "ไม่พบข้อมูล", en: "Not found" },
-  INVALID_TRANSITION: { status: 409, th: "สถานะปัจจุบันไม่อนุญาตให้ทำรายการนี้", en: "Not allowed in current status" },
-  IDEMPOTENCY_IN_PROGRESS: { status: 409, th: "คำขอนี้กำลังดำเนินการ", en: "Request already in progress" },
-  BUSINESS_RULE: { status: 422, th: "ไม่ผ่านเงื่อนไขของระบบ", en: "Business rule violated" },
-  BELOW_FLOOR: { status: 422, th: "ราคาต่ำกว่าราคาขั้นต่ำ", en: "Price below floor" },
-  NOT_ELIGIBLE: { status: 422, th: "คนขับหรือรถไม่ผ่านเงื่อนไข", en: "Driver or vehicle not eligible" },
-  QUOTE_EXPIRED: { status: 422, th: "ใบเสนอราคาหมดอายุ", en: "Quote expired" },
-  PAX_EXCEEDS_SEATS: { status: 422, th: "จำนวนผู้โดยสารเกินที่นั่ง", en: "Passengers exceed seats" },
-  QUOTE_RULE: { status: 422, th: "ข้อมูลการเดินทางไม่ผ่านเงื่อนไข", en: "Trip details not accepted" },
-  NO_PRICE_RULE: { status: 422, th: "ยังไม่มีราคาสำหรับบริการ/รถประเภทนี้", en: "No price for this service and car" },
-  INVALID_DISCOUNT: { status: 422, th: "ส่วนลดไม่ถูกต้อง", en: "Invalid discount" },
-  RATE_LIMITED: { status: 429, th: "ทำรายการถี่เกินไป", en: "Too many requests" },
-  ROUTE_UNAVAILABLE: { status: 503, th: "คำนวณระยะทางไม่ได้ชั่วคราว แอดมินจะติดต่อกลับ", en: "Route service unavailable" },
-  INTERNAL: { status: 500, th: "ระบบขัดข้อง", en: "Internal error" },
+  VALIDATION: { status: 400, th: "ข้อมูลไม่ถูกต้อง", en: "Invalid request", zh: "数据无效" },
+  UNAUTHENTICATED: { status: 401, th: "กรุณาเข้าสู่ระบบ", en: "Please sign in", zh: "请先登录" },
+  FORBIDDEN: { status: 403, th: "ไม่มีสิทธิ์", en: "Forbidden", zh: "无权限" },
+  NOT_FOUND: { status: 404, th: "ไม่พบข้อมูล", en: "Not found", zh: "未找到" },
+  INVALID_TRANSITION: { status: 409, th: "สถานะปัจจุบันไม่อนุญาตให้ทำรายการนี้", en: "Not allowed in current status", zh: "当前状态不允许此操作" },
+  IDEMPOTENCY_IN_PROGRESS: { status: 409, th: "คำขอนี้กำลังดำเนินการ", en: "Request already in progress", zh: "该请求正在处理中" },
+  BUSINESS_RULE: { status: 422, th: "ไม่ผ่านเงื่อนไขของระบบ", en: "Business rule violated", zh: "不符合系统规则" },
+  BELOW_FLOOR: { status: 422, th: "ราคาต่ำกว่าราคาขั้นต่ำ", en: "Price below floor", zh: "价格低于最低价" },
+  NOT_ELIGIBLE: { status: 422, th: "คนขับหรือรถไม่ผ่านเงื่อนไข", en: "Driver or vehicle not eligible", zh: "司机或车辆不符合条件" },
+  QUOTE_EXPIRED: { status: 422, th: "ใบเสนอราคาหมดอายุ", en: "Quote expired", zh: "报价单已过期" },
+  PAX_EXCEEDS_SEATS: { status: 422, th: "จำนวนผู้โดยสารเกินที่นั่ง", en: "Passengers exceed seats", zh: "乘客人数超过座位数" },
+  QUOTE_RULE: { status: 422, th: "ข้อมูลการเดินทางไม่ผ่านเงื่อนไข", en: "Trip details not accepted", zh: "行程信息不符合条件" },
+  NO_PRICE_RULE: { status: 422, th: "ยังไม่มีราคาสำหรับบริการ/รถประเภทนี้", en: "No price for this service and car", zh: "该服务/车型暂无价格" },
+  INVALID_DISCOUNT: { status: 422, th: "ส่วนลดไม่ถูกต้อง", en: "Invalid discount", zh: "折扣无效" },
+  RATE_LIMITED: { status: 429, th: "ทำรายการถี่เกินไป", en: "Too many requests", zh: "操作过于频繁" },
+  ROUTE_UNAVAILABLE: { status: 503, th: "คำนวณระยะทางไม่ได้ชั่วคราว แอดมินจะติดต่อกลับ", en: "Route service unavailable", zh: "暂时无法计算距离，工作人员会联系您" },
+  INTERNAL: { status: 500, th: "ระบบขัดข้อง", en: "Internal error", zh: "系统故障" },
 } satisfies Record<string, Def>;
 
 export type ErrorCode = keyof typeof ERRORS;
@@ -58,7 +58,7 @@ export function errorResponse(err: unknown): NextResponse {
   }
   const def = ERRORS[biz.code];
   return NextResponse.json(
-    { error: { code: biz.code, message_th: def.th, message_en: def.en, details: biz.details } },
+    { error: { code: biz.code, message_th: def.th, message_en: def.en, message_zh: def.zh, details: biz.details } },
     { status: def.status },
   );
 }

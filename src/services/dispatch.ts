@@ -1,6 +1,7 @@
 import "server-only";
 import { offerFlex } from "@/adapters/line/flex";
 import { offerTtlMinutes, onePerDriver, rankCandidates, type Candidate } from "@/domain/dispatch";
+import { messages } from "@/i18n";
 import type { SessionUser } from "@/lib/auth";
 import { SYSTEM, withTx, type Db } from "@/lib/db";
 import { BizError } from "@/lib/errors";
@@ -115,7 +116,7 @@ async function notifyAssigned(db: Db, bookingId: string) {
   const r = rows[0];
   // §6.3: แจ้งลูกค้า (ชื่อเล่นคนขับ, ทะเบียน) — ไม่ส่งเบอร์คนขับ (แชทผ่าน LINE OA)
   await notifyUser(db, r.customer_id,
-    `ได้คนขับแล้ว ✓\nคนขับ: ${r.display_name}${r.plate ? `\nทะเบียน: ${r.plate}` : ""}\nวันเดินทาง ${formatBangkok(r.pickup_at)}`,
+    (l) => messages(l).line.assigned(r.display_name, r.plate ?? null, formatBangkok(r.pickup_at, l)),
     `assigned:${bookingId}:${r.display_name}`);
 }
 

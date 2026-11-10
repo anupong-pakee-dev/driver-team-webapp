@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { upload, MAX_UPLOAD_BYTES } from "@/adapters/storage";
 import { cancellation, type CancelPolicy } from "@/domain/cancellation";
 import { contactAllowed, distanceM, TRIP_STEPS, waitFee, type TripStep } from "@/domain/dispatch";
+import { messages } from "@/i18n";
 import type { SessionUser } from "@/lib/auth";
 import { decryptField } from "@/lib/crypto";
 import { pool, SYSTEM, withTx } from "@/lib/db";
@@ -86,11 +87,11 @@ export async function tripStep(driver: SessionUser, bookingId: string, step: Tri
 
     if (far) await notifyRoles(db, ["owner"], `[check-in ห่างจุดนัด ${dist} ม.] ${step} · งาน ${formatBangkok(b.pickup_at)}`, `far:${bookingId}:${step}`);
     const { rows: c } = await db.query(`select customer_id from bookings where id = $1`, [bookingId]);
-    if (step === "arrive") await notifyUser(db, c[0].customer_id, "คนขับถึงจุดรับแล้ว", `arrived:${bookingId}`);
+    if (step === "arrive") await notifyUser(db, c[0].customer_id, (l) => messages(l).line.arrived, `arrived:${bookingId}`);
     if (step === "dropoff") {
       // FR-TRIP-03: ส่งลิงก์ยืนยัน/รีวิว
       await notifyUser(db, c[0].customer_id,
-        `ถึงที่หมายแล้ว ขอบคุณที่ใช้บริการ 🙏\nยืนยันจบงานและให้คะแนนคนขับ: ${customerLink(`/bookings/${bookingId}`)}`, `dropped:${bookingId}`);
+        (l) => messages(l).line.dropped(customerLink(`/bookings/${bookingId}`)), `dropped:${bookingId}`);
     }
     return { status: def.to, distance_from_target_m: dist, warning };
   });
@@ -223,7 +224,7 @@ export async function confirmNoShow(owner: SessionUser, bookingId: string, reaso
     }
     await db.query(`update incidents set status = 'resolved', resolved_by = $2, resolution = $3, closed_at = now()
                      where booking_id = $1 and type = 'no_show' and status = 'open'`, [bookingId, owner.id, reason]);
-    await notifyUser(db, b.customer_id, `บันทึกว่าไม่พบผู้โดยสารตามนัด${r.refund > 0 ? ` · คืนยอดคงเหลือ ${formatBaht(r.refund)}` : ""}`, `noshow:${bookingId}`);
+    await notifyUser(db, b.customer_id, (l) => messages(l).line.noShow(r.refund > 0 ? formatBaht(r.refund) : null), `noshow:${bookingId}`);
     return { status: "no_show", refund_satang: r.refund, driver_satang: driver };
   });
 }
@@ -255,7 +256,7 @@ export async function reminders(now = new Date()) {
         `select id, customer_id, driver_id, pickup_at from bookings
           where status in ('confirmed','assigned') and pickup_at >= $1 and pickup_at < $1::timestamptz + interval '1 day'`, [tomorrow]);
       for (const b of rows) {
-        await notifyUser(db, b.customer_id, `เตือน: พรุ่งนี้ ${formatBangkok(b.pickup_at)} มีการเดินทาง`, `remind:${b.id}:day`);
+        await notifyUser(db, b.customer_id, (l) => messages(l).line.remindDay(formatBangkok(b.pickup_at, l)), `remind:${b.id}:day`);
         if (b.driver_id) await notifyUser(db, b.driver_id, `เตือน: พรุ่งนี้มีงาน ${formatBangkok(b.pickup_at)}`, `remind:${b.id}:day:driver`);
         sent++;
       }
@@ -264,7 +265,7 @@ export async function reminders(now = new Date()) {
       `select id, customer_id, driver_id, pickup_at from bookings
         where status in ('assigned','en_route') and pickup_at > now() and pickup_at <= now() + interval '2 hours'`);
     for (const b of soon) {
-      await notifyUser(db, b.customer_id, `อีกไม่เกิน 2 ชม. ถึงเวลารับ ${formatBangkok(b.pickup_at)}`, `remind:${b.id}:2h`);
+      await notifyUser(db, b.customer_id, (l) => messages(l).line.remind2h(formatBangkok(b.pickup_at, l)), `remind:${b.id}:2h`);
       if (b.driver_id) await notifyUser(db, b.driver_id, `อีกไม่เกิน 2 ชม. มีงาน ${formatBangkok(b.pickup_at)} — เปิดแอปเพื่อออกเดินทาง`, `remind:${b.id}:2h:driver`);
       sent++;
     }

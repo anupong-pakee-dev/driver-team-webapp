@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { verifyLiffIdToken, type LineIdentity } from "@/adapters/line/liffAuth";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, negotiate, pickLocale } from "@/i18n";
 import { startSession } from "@/lib/auth";
 import { SYSTEM, withTx } from "@/lib/db";
 import { devLoginEnabled } from "@/lib/dev";
@@ -13,6 +14,7 @@ const Body = z.strictObject({
   id_token: z.string().min(5),
   app: z.enum(["customer", "driver"]),
   invite_token: z.string().min(10).max(100).optional(),
+  lang: z.string().max(20).optional(),   // liff.getLanguage() — ภาษาของแอป LINE
 });
 
 async function identify(idToken: string): Promise<LineIdentity> {
@@ -35,7 +37,15 @@ export async function POST(req: NextRequest) {
         ? redeemInvite(db, body.invite_token, identity)
         : upsertLineUser(db, identity, body.app));
     await startSession(userId, "liff");
-    return NextResponse.json({ ok: true });
+    const res = NextResponse.json({ ok: true });
+    if (body.app === "customer") {
+      // ภาษาที่ลูกค้าเลือกไว้ (cookie) มาก่อน → ภาษาของ LINE → เบราว์เซอร์ → ไทย · บันทึกในบัญชีไว้ส่งข้อความ LINE
+      const chosen = req.cookies.get(LOCALE_COOKIE)?.value;
+      const locale = isLocale(chosen) ? chosen : pickLocale(body.lang) ?? negotiate(req.headers.get("accept-language")) ?? DEFAULT_LOCALE;
+      await withTx({ ...SYSTEM, reason: "customer language" }, (db) => db.query(`update users set locale = $2 where id = $1`, [userId, locale]));
+      res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax", httpOnly: true, secure: req.nextUrl.protocol === "https:" });
+    }
+    return res;
   } catch (e) {
     return errorResponse(e);
   }

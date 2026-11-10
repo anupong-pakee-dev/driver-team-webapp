@@ -5,12 +5,15 @@ import { pool } from "./db";
 // ADR-10: กฎที่อาจเปลี่ยนอยู่ในตาราง settings (แก้ได้โดยไม่แก้โค้ด)
 
 export type CatalogSettings = {
-  tabs: { service_type: string; label_th: string; label_en: string; note_th: string; note_en: string }[];
-  cars: Record<string, { name_th: string; name_en: string; seats?: number; seats_label?: string; luggage?: number; desc_th?: string; desc_en?: string }>;
+  tabs: { service_type: string; label_th: string; label_en: string; label_zh?: string; note_th: string; note_en: string; note_zh?: string }[];
+  cars: Record<string, {
+    name_th: string; name_en: string; name_zh?: string; seats?: number; seats_label?: string; luggage?: number;
+    desc_th?: string; desc_en?: string; desc_zh?: string;
+  }>;
   order: string[];
 };
 
-export type Brand = { name_th: string; name_en: string };
+export type Brand = { name_th: string; name_en: string; name_zh?: string };
 
 // อ่านจาก pool: cache สั้นๆ ต่อ process (NFR-03) — แก้ค่าแล้วล้างทันทีใน process นี้ (invalidateSettings)
 // instance อื่นเห็นค่าใหม่ภายใน TTL · อ่านภายใน transaction (ส่ง db มา) ไม่ใช้ cache เสมอ

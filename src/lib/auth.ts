@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import { cache } from "react";
+import type { Locale } from "@/i18n";
 import { pool } from "./db";
 import { BizError } from "./errors";
 
@@ -16,7 +17,7 @@ export type SessionUser = {
   authUserId: string;
   role: Role;
   displayName: string | null;
-  locale: "th" | "en";
+  locale: Locale;
 };
 
 const COOKIE = "sid";

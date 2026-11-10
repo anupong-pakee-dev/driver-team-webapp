@@ -16,7 +16,8 @@
   --color-warn: #b45309;
   --color-bad: #b42318;
 
-  --font-sans: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
+  /* ภาษาจีน: IBM Plex Sans Thai ไม่มีอักษรจีน → ใช้ฟอนต์ระบบ (iOS/macOS, Android, Windows) */
+  --font-sans: var(--font-thai), "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 1rem;
   --radius-btn: 0.875rem;

@@ -1,4 +1,5 @@
 import "server-only";
+import { localized, messages, type Locale } from "@/i18n";
 import { asUser, pool } from "@/lib/db";
 import { getSettings, type CatalogSettings } from "@/lib/settings";
 import { carLabel, SERVICE_TYPES } from "./portal";
@@ -9,7 +10,8 @@ export type FormCar = { car_type: string; label: string; seats?: number; luggage
 export type FormService = { service_type: string; label: string; cars: FormCar[]; hours: number[] };
 export type QuoteFormOptions = { services: FormService[] };
 
-export async function quoteFormOptions(forCustomer: boolean): Promise<QuoteFormOptions> {
+export async function quoteFormOptions(forCustomer: boolean, locale: Locale = "th"): Promise<QuoteFormOptions> {
+  const t = messages(locale);
   const s = await getSettings();
   const catalog = s.catalog as CatalogSettings;
   const hours = (s.charter_hours ?? {}) as Record<string, number[]>;
@@ -26,7 +28,7 @@ export async function quoteFormOptions(forCustomer: boolean): Promise<QuoteFormO
   return {
     services: SERVICE_TYPES.map((svc) => ({
       service_type: svc.value,
-      label: svc.label,
+      label: locale === "th" ? svc.label : t.service[svc.value] ?? svc.label,
       hours: hours[svc.value] ?? [],
       cars: rules
         .filter((r) => r.service_type === svc.value && (!available || available.has(`${r.service_type}|${r.car_type}`)))
@@ -34,7 +36,7 @@ export async function quoteFormOptions(forCustomer: boolean): Promise<QuoteFormO
           const c = catalog.cars[r.car_type];
           return {
             car_type: r.car_type,
-            label: c?.name_th ?? carLabel(r.car_type),
+            label: (c && localized(c, "name", locale)) || (locale === "th" ? carLabel(r.car_type) : t.car[r.car_type] ?? r.car_type),
             seats: c?.seats, luggage: c?.luggage, from_satang: r.base_satang,
           };
         })

@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { useI18n } from "./I18nProvider";
 import { input as inputCls } from "./ui";
 
 // FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง 3 แบบ: GPS มือถือ · ปักหมุดบนแผนที่ (OSM) · วางลิงก์/พิกัดจาก Google Maps
@@ -11,12 +12,6 @@ export type PickedPlace = { lat: number; lng: number; name: string; source: "gps
 
 const MapPicker = dynamic(() => import("./MapPicker").then((m) => m.MapPicker), { ssr: false });
 
-const GEO_ERROR: Record<number, string> = {
-  1: "ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง — เปิดสิทธิ์ตำแหน่งให้ LINE หรือใช้ปักหมุดแทน",
-  2: "หาตำแหน่งไม่ได้ ลองใหม่ในที่โล่ง หรือใช้ปักหมุดแทน",
-  3: "หาตำแหน่งนานเกินไป ลองใหม่ หรือใช้ปักหมุดแทน",
-};
-
 export function LocationInput({
   label, value, onChange, required,
 }: {
@@ -25,6 +20,8 @@ export function LocationInput({
   onChange: (p: PickedPlace | null) => void;
   required?: boolean;
 }) {
+  const { t } = useI18n();
+  const L = t.location;
   const [mapOpen, setMapOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [link, setLink] = useState("");
@@ -37,7 +34,7 @@ export function LocationInput({
   };
 
   function useGps() {
-    if (!navigator.geolocation) return setError("อุปกรณ์นี้ไม่รองรับ GPS — ใช้ปักหมุดแทน");
+    if (!navigator.geolocation) return setError(L.noGeo);
     setBusy("gps");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -46,7 +43,7 @@ export function LocationInput({
       },
       (e) => {
         setBusy(null);
-        setError(GEO_ERROR[e.code] ?? "หาตำแหน่งไม่ได้");
+        setError(({ 1: L.geoDenied, 2: L.geoUnavailable, 3: L.geoTimeout } as Record<number, string>)[e.code] ?? L.geoFailed);
       },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
     );
@@ -62,8 +59,7 @@ export function LocationInput({
     setBusy(null);
     if (!res.ok) {
       const problem = out?.error?.details?.problem;
-      return setError(problem === "outside_thailand" ? "ตำแหน่งนี้อยู่นอกประเทศไทย"
-        : "อ่านพิกัดจากลิงก์นี้ไม่ได้ — ในแอป Google Maps ให้กดค้างที่จุดนั้นจนขึ้นหมุดแดง แล้วกดแชร์ หรือใช้ปักหมุดแทน");
+      return setError(problem === "outside_thailand" ? L.outside : L.linkFailed);
     }
     set(out, "link", value?.name || out.name);
     setLinkOpen(false);
@@ -80,40 +76,40 @@ export function LocationInput({
         <div className="space-y-2 rounded-xl border-2 border-navy bg-card p-3">
           <div className="flex items-start justify-between gap-2 text-sm">
             <span>
-              <span className="block font-medium text-ok">✓ ได้ตำแหน่งแล้ว</span>
+              <span className="block font-medium text-ok">{L.got}</span>
               <span className="block text-xs text-muted">
                 {value.lat.toFixed(5)}, {value.lng.toFixed(5)} ·{" "}
                 <a className="underline" target="_blank" rel="noreferrer"
-                  href={`https://www.openstreetmap.org/?mlat=${value.lat}&mlon=${value.lng}#map=18/${value.lat}/${value.lng}`}>ดูบนแผนที่</a>
+                  href={`https://www.openstreetmap.org/?mlat=${value.lat}&mlon=${value.lng}#map=18/${value.lat}/${value.lng}`}>{L.viewMap}</a>
               </span>
             </span>
             <span className="flex shrink-0 gap-3">
-              <button type="button" className="text-navy underline" onClick={() => setMapOpen(true)}>ปรับหมุด</button>
-              <button type="button" className="text-muted underline" onClick={() => onChange(null)}>ล้าง</button>
+              <button type="button" className="text-navy underline" onClick={() => setMapOpen(true)}>{L.adjust}</button>
+              <button type="button" className="text-muted underline" onClick={() => onChange(null)}>{L.clear}</button>
             </span>
           </div>
           <input className={inputCls} maxLength={120} value={value.name}
-            placeholder="ชื่อสถานที่ / จุดสังเกต เช่น คอนโด ABC ตึก B, หน้าเซเว่น"
-            aria-label={`${label} — ชื่อสถานที่หรือจุดสังเกต`}
+            placeholder={L.namePh}
+            aria-label={L.nameLabel(label)}
             onChange={(e) => onChange({ ...value, name: e.target.value })} />
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <button type="button" className={chip} onClick={useGps} disabled={busy === "gps"}>
-            {busy === "gps" ? "กำลังหาตำแหน่ง…" : "📍 ตำแหน่งปัจจุบัน"}
+            {busy === "gps" ? L.locating : L.gps}
           </button>
-          <button type="button" className={chip} onClick={() => setMapOpen(true)}>🗺️ ปักหมุดบนแผนที่</button>
-          <button type="button" className={chip} onClick={() => setLinkOpen((v) => !v)} aria-expanded={linkOpen}>🔗 วางลิงก์ Google Maps</button>
+          <button type="button" className={chip} onClick={() => setMapOpen(true)}>{L.pin}</button>
+          <button type="button" className={chip} onClick={() => setLinkOpen((v) => !v)} aria-expanded={linkOpen}>{L.link}</button>
         </div>
       )}
 
       {linkOpen && !value && (
         <div className="flex gap-2">
           <input className={inputCls} value={link} onChange={(e) => setLink(e.target.value)} inputMode="url"
-            placeholder="วางลิงก์ที่แชร์จาก Google Maps หรือพิกัด 13.7462, 100.5347" aria-label="ลิงก์ Google Maps หรือพิกัด" />
+            placeholder={L.linkPh} aria-label={L.linkLabel} />
           <button type="button" className="shrink-0 rounded-[var(--radius-btn)] bg-navy px-4 text-sm font-medium text-white disabled:opacity-60"
             onClick={useLink} disabled={busy === "link" || !link.trim()}>
-            {busy === "link" ? "กำลังอ่าน…" : "ใช้ลิงก์นี้"}
+            {busy === "link" ? L.reading : L.useLink}
           </button>
         </div>
       )}

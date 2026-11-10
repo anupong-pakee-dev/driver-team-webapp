@@ -1,4 +1,5 @@
 import "server-only";
+import { localized, messages, type Locale } from "@/i18n";
 import { asUser, pool } from "@/lib/db";
 import type { Brand, CatalogSettings } from "@/lib/settings";
 
@@ -23,7 +24,7 @@ export function invalidateCatalog() {
   cache.clear();
 }
 
-export async function loadCatalog(locale: "th" | "en" = "th"): Promise<{ brand: Brand; tabs: CatalogTab[] }> {
+export async function loadCatalog(locale: Locale = "th"): Promise<{ brand: Brand; tabs: CatalogTab[] }> {
   const hit = cache.get(locale);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
   const value = await loadCatalogFresh(locale);
@@ -31,7 +32,7 @@ export async function loadCatalog(locale: "th" | "en" = "th"): Promise<{ brand: 
   return value;
 }
 
-async function loadCatalogFresh(locale: "th" | "en"): Promise<{ brand: Brand; tabs: CatalogTab[] }> {
+async function loadCatalogFresh(locale: Locale): Promise<{ brand: Brand; tabs: CatalogTab[] }> {
   // settings ไม่เปิดให้ anon → อ่านด้วยสิทธิ์ server เฉพาะ 2 key ที่เป็นข้อมูลสาธารณะ
   const { rows: s } = await pool.query(`select key, value from settings where key in ('catalog','brand')`);
   const catalog = s.find((r) => r.key === "catalog")?.value as CatalogSettings;
@@ -51,21 +52,17 @@ async function loadCatalogFresh(locale: "th" | "en"): Promise<{ brand: Brand; ta
     return { rules: rows, available: new Set(avail.rows.map((a) => `${a.service_type}|${a.car_type}`)) };
   });
 
-  const th = locale === "th";
-  const tabs = catalog.tabs.map((t) => ({
-    serviceType: t.service_type,
-    label: th ? t.label_th : t.label_en,
-    note: th ? t.note_th : t.note_en,
+  const t = messages(locale);
+  const tabs = catalog.tabs.map((tab) => ({
+    serviceType: tab.service_type,
+    label: localized(tab, "label", locale),
+    note: localized(tab, "note", locale),
     items: catalog.order.flatMap((carType) => {
-      const r = rules.find((x) => x.car_type === carType && x.service_type === t.service_type);
+      const r = rules.find((x) => x.car_type === carType && x.service_type === tab.service_type);
       const car = catalog.cars[carType];
-      if (!r || !car || !available.has(`${t.service_type}|${carType}`)) return [];
-      const sub = car.seats
-        ? th
-          ? `${car.seats_label ?? car.seats} ที่นั่ง · ${car.luggage} กระเป๋า`
-          : `${car.seats_label ?? car.seats} seats · ${car.luggage} bags`
-        : (th ? car.desc_th : car.desc_en) ?? "";
-      return [{ carType, name: th ? car.name_th : car.name_en, sub, fromSatang: Number(r.from_satang), toSatang: Number(r.to_satang) }];
+      if (!r || !car || !available.has(`${tab.service_type}|${carType}`)) return [];
+      const sub = car.seats ? t.seats(car.seats_label ?? car.seats, car.luggage ?? 0) : localized(car, "desc", locale);
+      return [{ carType, name: localized(car, "name", locale), sub, fromSatang: Number(r.from_satang), toSatang: Number(r.to_satang) }];
     }),
   }));
   return { brand, tabs };

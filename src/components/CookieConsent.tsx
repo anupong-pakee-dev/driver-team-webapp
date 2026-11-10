@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useI18n } from "./I18nProvider";
 
 // FR-PDPA-05 / FR-ADS-10: ถามก่อน · โหลด Pixel หลังยินยอมเท่านั้น · ปฏิเสธ = ไม่มี request ไปแพลตฟอร์มโฆษณา
 // ค่า mc (1/0) อ่านจาก cookie ฝั่ง client เพื่อแสดง/ซ่อนแบนเนอร์ — การบันทึกจริงอยู่ที่ /api/consents/cookie
@@ -35,6 +36,7 @@ function loadMetaPixel(id: string) {
 }
 
 export function CookieConsent({ pixelId }: { pixelId?: string }) {
+  const { t } = useI18n();
   const [state, setState] = useState<"1" | "0" | null | "loading">("loading");
 
   useEffect(() => {
@@ -53,15 +55,15 @@ export function CookieConsent({ pixelId }: { pixelId?: string }) {
 
   if (state !== null) return null;
   return (
-    <div role="dialog" aria-label="ความยินยอมคุกกี้" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+    <div role="dialog" aria-label={t.cookie.label} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-card p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
       <div className="mx-auto max-w-md space-y-3 text-sm">
         <p>
-          เราใช้คุกกี้ที่จำเป็นเพื่อให้เว็บทำงาน และขอใช้คุกกี้เพื่อวัดผลโฆษณา (ไม่บังคับ){" "}
-          <Link href="/privacy" className="text-navy underline">อ่านเพิ่มเติม</Link>
+          {t.cookie.text}{" "}
+          <Link href="/privacy" className="text-navy underline">{t.cookie.more}</Link>
         </p>
         <div className="flex gap-2">
-          <button className="flex-1 rounded-[var(--radius-btn)] border border-line px-4 py-2.5 font-medium" onClick={() => decide(false)}>เฉพาะที่จำเป็น</button>
-          <button className="flex-1 rounded-[var(--radius-btn)] bg-navy px-4 py-2.5 font-bold text-white" onClick={() => decide(true)}>ยอมรับทั้งหมด</button>
+          <button className="flex-1 rounded-[var(--radius-btn)] border border-line px-4 py-2.5 font-medium" onClick={() => decide(false)}>{t.cookie.necessary}</button>
+          <button className="flex-1 rounded-[var(--radius-btn)] bg-navy px-4 py-2.5 font-bold text-white" onClick={() => decide(true)}>{t.cookie.acceptAll}</button>
         </div>
       </div>
     </div>
