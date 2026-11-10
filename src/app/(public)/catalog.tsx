@@ -160,7 +160,7 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
               <Close className="h-6 w-6" />
             </button>
             <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/customer">{c.myBookings}</Link>
-            <Link className="rounded-lg px-3 py-3 font-medium hover:bg-page" href="/liff/driver">{c.forDrivers}</Link>
+            {/* หน้าคนขับไม่มีลิงก์จากหน้าลูกค้า — คนขับเข้าผ่านลิงก์เชิญ / LIFF ของคนขับ / พิมพ์ /liff/driver */}
           </nav>
         </div>
       )}

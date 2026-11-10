@@ -99,7 +99,6 @@ export const zh: Messages = {
     mainMenu: "主菜单",
     closeMenu: "关闭菜单",
     myBookings: "我的预订",
-    forDrivers: "司机入口",
   },
   landing: {
     titles: {

@@ -99,7 +99,6 @@ export const th = {
     mainMenu: "เมนูหลัก",
     closeMenu: "ปิดเมนู",
     myBookings: "การจองของฉัน",
-    forDrivers: "สำหรับคนขับ",
   },
   landing: {
     titles: {

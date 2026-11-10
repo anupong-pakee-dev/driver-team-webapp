@@ -98,7 +98,6 @@ export const en: Messages = {
     mainMenu: "Main menu",
     closeMenu: "Close menu",
     myBookings: "My bookings",
-    forDrivers: "For drivers",
   },
   landing: {
     titles: {

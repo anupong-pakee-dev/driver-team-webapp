@@ -199,7 +199,8 @@ node -e "const c=require('crypto');for(const k of ['SESSION_SECRET','FIELD_ENCRY
 ### 5.6 ริชเมนู (OA Manager → Rich menus → Create)
 - ขอใบเสนอราคา → `https://liff.line.me/<LIFF_ID_CUSTOMER>/quote`
 - การจองของฉัน → `https://liff.line.me/<LIFF_ID_CUSTOMER>`
-- สำหรับคนขับ → `https://liff.line.me/<LIFF_ID_DRIVER>`
+
+**ไม่ใส่ปุ่มคนขับในริชเมนู** (ลูกค้าทุกคนเห็นริชเมนูเดียวกัน) — คนขับเข้าผ่านลิงก์เชิญครั้งแรก แล้วบันทึกลิงก์ `https://liff.line.me/<LIFF_ID_DRIVER>` ไว้เอง (เช่น ปักหมุดในแชต Keep memo)
 
 ---
 
