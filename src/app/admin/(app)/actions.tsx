@@ -170,3 +170,49 @@ export function VehicleActiveToggle({ id, active }: { id: string; active: boolea
     </button>
   );
 }
+
+/** เจ้าของลบคนขับ — ต้องพิมพ์ชื่อยืนยัน + ใส่เหตุผล */
+export function RemoveDriver({ driverId, name }: { driverId: string; name: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function run() {
+    const typed = window.prompt(`พิมพ์ชื่อ "${name}" เพื่อยืนยันการลบคนขับ (ย้อนกลับไม่ได้)`);
+    if (typed === null) return;
+    if (typed.trim() !== name.trim()) return setMsg({ ok: false, text: "ชื่อไม่ตรง — ยังไม่ได้ลบ" });
+    const reason = window.prompt("เหตุผลที่ลบ (เช่น คนขับขอลบข้อมูล / เชิญผิดคน)");
+    if (!reason || reason.trim().length < 3) return setMsg({ ok: false, text: "ต้องใส่เหตุผลอย่างน้อย 3 ตัวอักษร" });
+    setBusy(true);
+    const r = await call(`/api/admin/drivers/${driverId}/remove`, "POST", { reason });
+    setBusy(false);
+    if (!r.ok) {
+      const rule = r.json?.error?.details?.rule;
+      return setMsg({
+        ok: false,
+        text: rule === "DRIVER_HAS_OPEN_JOBS"
+          ? `ยังมีงานที่ไม่จบ ${r.json.error.details.count} งาน — ย้ายงานให้คนขับคนอื่นหรือรอให้จบก่อน`
+          : r.json?.error?.message_th ?? "ลบไม่สำเร็จ",
+      });
+    }
+    const fileNote = r.json.fileError ? " (ลบไฟล์เอกสารบางส่วนไม่สำเร็จ — ตรวจใน Supabase Storage)" : "";
+    if (r.json.mode === "deleted") {
+      window.alert(`ลบบัญชีคนขับแล้ว${fileNote}`);
+      router.push("/admin/drivers");
+      router.refresh();
+      return;
+    }
+    setMsg({ ok: true, text: `บล็อกบัญชีและลบข้อมูลส่วนตัวแล้ว — เก็บประวัติงานไว้${fileNote}` });
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-2">
+      <button type="button" disabled={busy} onClick={run}
+        className="rounded-lg border border-bad px-3 py-2 text-sm font-semibold text-bad disabled:opacity-50">
+        {busy ? "กำลังลบ…" : "ลบคนขับคนนี้"}
+      </button>
+      {msg && <p className={"text-sm " + (msg.ok ? "text-ok" : "text-bad")} role="status">{msg.text}</p>}
+    </div>
+  );
+}

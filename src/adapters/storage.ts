@@ -36,6 +36,14 @@ export async function upload(bucket: Bucket, path: string, body: ArrayBuffer, co
   if (error) throw new Error(`storage upload failed: ${error.message}`);
 }
 
+/** ลบไฟล์ (เช่น เอกสารของคนขับที่ถูกลบ) — ไฟล์ที่ไม่มีอยู่แล้วไม่ถือว่าผิดพลาด */
+export async function remove(bucket: Bucket, paths: string[]) {
+  for (let i = 0; i < paths.length; i += 100) {
+    const { error } = await sb().storage.from(bucket).remove(paths.slice(i, i + 100));
+    if (error) throw new Error(`storage remove failed: ${error.message}`);
+  }
+}
+
 export async function signedUrl(bucket: Bucket, path: string, seconds = 600): Promise<string> {
   const { data, error } = await sb().storage.from(bucket).createSignedUrl(path, Math.min(seconds, 600));
   if (error || !data) throw new Error(`signed url failed: ${error?.message}`);

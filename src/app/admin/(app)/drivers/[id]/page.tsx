@@ -8,7 +8,8 @@ import { carLabel, docSlots, formOptions, SERVICE_TYPES } from "@/services/porta
 import { AdminDocList } from "@/components/AdminDocList";
 import { Reasons } from "@/components/Reasons";
 import { Badge, Empty, Panel } from "@/components/ui";
-import { BackgroundCheckForm, ReissueInvite, VehicleActiveToggle } from "../../actions";
+import { REMOVED_DRIVER_NAME } from "@/services/driverRemoval";
+import { BackgroundCheckForm, RemoveDriver, ReissueInvite, VehicleActiveToggle } from "../../actions";
 
 export default async function DriverDetail({ params }: PageProps<"/admin/drivers/[id]">) {
   const user = await requireStaffPage(["sales_admin", "owner"]);
@@ -118,6 +119,17 @@ export default async function DriverDetail({ params }: PageProps<"/admin/drivers
           {isOwner && <div className="mt-3 border-t border-line pt-3"><AdminDocList slots={data.vehicleSlots[i]} canReview labels={labels} /></div>}
         </Panel>
       ))}
+      {isOwner && d.display_name !== REMOVED_DRIVER_NAME && (
+        <Panel title="ลบคนขับ">
+          <div className="space-y-3 text-sm">
+            <p className="text-muted">
+              ถ้ายังไม่เคยมีงานหรือข้อเสนองาน ระบบจะลบบัญชีทั้งหมด · ถ้าเคยมีงานแล้ว ระบบจะบล็อกบัญชีและลบข้อมูลส่วนตัว
+              (ชื่อจริง เบอร์โทร LINE เลขใบขับขี่ บัญชีธนาคาร ไฟล์เอกสาร) แต่เก็บประวัติงานและยอดเงินไว้ทำบัญชี
+            </p>
+            <RemoveDriver driverId={d.id} name={d.display_name ?? ""} />
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }
