@@ -2,19 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { apiErrorText } from "@/i18n";
+import { clearSignedOut, isSignedOut, type LiffApp } from "@/lib/liffSignOut";
 import { useI18n } from "./I18nProvider";
 import { btnPrimary } from "./ui";
 
 // §9.1 LIFF: init → login → ID token → POST /api/auth/liff → session cookie
-export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver"; liffId?: string; devLogin: boolean }) {
+// ผู้ใช้กด "ออกจากระบบ" เอง → ไม่ login อัตโนมัติ จนกว่าจะกดปุ่ม "เข้าสู่ระบบด้วย LINE"
+
+const noSubscribe = () => () => {};
+
+export function LiffLogin({ app, liffId, devLogin }: { app: LiffApp; liffId?: string; devLogin: boolean }) {
   const router = useRouter();
   const { t, locale } = useI18n();
   const [error, setError] = useState<string | null>(null);
+  const [wantLogin, setWantLogin] = useState(false);
+  // อ่านจาก localStorage หลัง hydrate เท่านั้น (ฝั่งเซิร์ฟเวอร์ = ยังไม่ออกจากระบบ)
+  const signedOut = useSyncExternalStore(noSubscribe, () => isSignedOut(app), () => false) && !wantLogin;
 
   useEffect(() => {
-    if (!liffId) return;
+    if (!liffId || signedOut) return;
     let cancelled = false;
     (async () => {
       try {
@@ -45,7 +53,26 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
     return () => {
       cancelled = true;
     };
-  }, [app, liffId, router, locale]);
+  }, [app, liffId, signedOut, router, locale]);
+
+  if (liffId && signedOut) {
+    return (
+      <div className="space-y-4 py-10 text-center">
+        <p className="text-muted">{t.common.signedOut}</p>
+        <button
+          type="button"
+          className={btnPrimary}
+          onClick={() => {
+            clearSignedOut(app);
+            setError(null);
+            setWantLogin(true);
+          }}
+        >
+          {t.common.signInLine}
+        </button>
+      </div>
+    );
+  }
 
   if (liffId) {
     return (

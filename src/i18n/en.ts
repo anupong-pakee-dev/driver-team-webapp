@@ -9,6 +9,8 @@ export const en: Messages = {
     noLiff: "The customer LIFF ID has not been set up yet",
     devLogin: "Test sign-in (local)",
     logout: "Sign out",
+    signedOut: "You have signed out",
+    signInLine: "Sign in with LINE",
     back: "Back",
     print: "Save PDF / Print",
     cancel: "Cancel",

@@ -10,6 +10,8 @@ export const th = {
     noLiff: "ยังไม่ได้ตั้งค่า LIFF ID สำหรับแอปลูกค้า",
     devLogin: "เข้าสู่ระบบแบบทดสอบ (local)",
     logout: "ออกจากระบบ",
+    signedOut: "ออกจากระบบแล้ว",
+    signInLine: "เข้าสู่ระบบด้วย LINE",
     back: "ย้อนกลับ",
     print: "บันทึก PDF / พิมพ์",
     cancel: "ยกเลิก",

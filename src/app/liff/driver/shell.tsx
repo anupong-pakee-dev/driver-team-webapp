@@ -29,7 +29,7 @@ export function DriverShell({
         title={title}
         subtitle={subtitle}
         back={back}
-        right={<div className="flex flex-col items-end gap-2">{extra}<LogoutButton to="/liff/driver" /></div>}
+        right={<div className="flex flex-col items-end gap-2">{extra}<LogoutButton to="/liff/driver" app="driver" /></div>}
       />
       <main className={"flex-1 space-y-3 px-4 pt-3 lg:order-1 lg:px-5 lg:pb-6 " + (bottom ? "pb-36" : "pb-28") +
         (columns === 2 ? " lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0" : "")}>{children}</main>

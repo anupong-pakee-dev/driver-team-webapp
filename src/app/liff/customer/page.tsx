@@ -44,7 +44,7 @@ export default async function CustomerHome() {
       <AppHeader
         title={h.hello(user.displayName ?? "")}
         subtitle={user.role === "customer" ? h.customerAccount : h.otherAccount(user.role)}
-        right={<div className="flex flex-col items-end gap-2"><LanguageSwitcher /><LogoutButton to="/liff/customer" /></div>}
+        right={<div className="flex flex-col items-end gap-2"><LanguageSwitcher /><LogoutButton to="/liff/customer" app="customer" /></div>}
       />
       <main className="space-y-4 px-5 py-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
         <Link href="/liff/customer/quote" className={`${btnPrimary} w-full lg:col-span-2 lg:w-auto lg:justify-self-start`}>

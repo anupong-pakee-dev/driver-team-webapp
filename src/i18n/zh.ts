@@ -10,6 +10,8 @@ export const zh: Messages = {
     noLiff: "尚未设置客户端 LIFF ID",
     devLogin: "测试登录（本地）",
     logout: "退出登录",
+    signedOut: "已退出登录",
+    signInLine: "使用 LINE 登录",
     back: "返回",
     print: "保存 PDF / 打印",
     cancel: "取消",
