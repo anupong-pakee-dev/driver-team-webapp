@@ -54,7 +54,7 @@ export default async function DriversPage() {
                 {drivers.map((d) => (
                   <tr key={d.id} className="align-top">
                     <td className="py-3 pr-3">
-                      <Link href={`/admin/drivers/${d.id}`} className="font-medium text-navy underline-offset-2 hover:underline">
+                      <Link href={`/admin/drivers/${d.id}`} className="font-medium text-sage underline-offset-2 hover:underline">
                         {d.display_name}
                       </Link>
                       {d.status !== "active" && <Badge tone="bad">{d.status}</Badge>}

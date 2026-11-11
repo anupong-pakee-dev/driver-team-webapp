@@ -190,7 +190,7 @@ export default async function UsagePage() {
             <Stat label="เอกสารรอตรวจ" value={n(u.drivers.docs_pending)} />
             <Stat label="เอกสารหมดใน 30 วัน" value={n(u.drivers.docs_expiring)} />
           </div>
-          <Link href="/admin/documents" className="mt-3 inline-block text-sm text-navy underline">ไปที่ตรวจเอกสาร</Link>
+          <Link href="/admin/documents" className="mt-3 inline-block text-sm text-sage underline">ไปที่ตรวจเอกสาร</Link>
         </Panel>
         <Panel title="ข้อความ LINE ของระบบ (เดือนนี้)">
           <div className="grid grid-cols-3 gap-2">
@@ -199,7 +199,7 @@ export default async function UsagePage() {
             <Stat label="ส่งไม่ได้" value={n(u.outbox.dead)} />
           </div>
           {u.outbox.waiting > 0 && <p className="mt-2 text-xs text-warn">มีข้อความรอส่ง — ถ้ายังไม่ได้ตั้งงานอัตโนมัติ (cron) ข้อความจะไม่ถูกส่ง</p>}
-          <Link href="/admin/system" className="mt-3 inline-block text-sm text-navy underline">ไปที่หน้าระบบ</Link>
+          <Link href="/admin/system" className="mt-3 inline-block text-sm text-sage underline">ไปที่หน้าระบบ</Link>
         </Panel>
       </div>
     </div>

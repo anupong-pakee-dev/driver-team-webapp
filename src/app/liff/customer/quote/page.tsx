@@ -8,7 +8,7 @@ import { quoteFormOptions } from "@/services/quoteForm";
 import { LiffLogin } from "@/components/LiffLogin";
 import { QuoteForm } from "@/components/QuoteForm";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { AppHeader, Panel } from "@/components/ui";
+import { AppHeader } from "@/components/ui";
 import { ClaimTouchpoint } from "./claim";
 
 export const dynamic = "force-dynamic";
@@ -31,11 +31,10 @@ export default async function QuoteRequestPage({ searchParams }: PageProps<"/lif
   const [options, lead] = await Promise.all([quoteFormOptions(true, locale), getSetting<number>("quote_min_lead_minutes")]);
   return (
     <div className="mx-auto w-full max-w-md">
-      <AppHeader title={t.quoteForm.title} subtitle={t.quoteForm.subtitle} right={<LanguageSwitcher />} />
-      <main className="px-5 py-4 pb-10">
+      <AppHeader title={t.quoteForm.title} subtitle={t.quoteForm.subtitle} right={<LanguageSwitcher />} back="/" backLabel={t.common.back} />
+      <main className="px-5 py-4 pb-32">
         {typeof sp.t === "string" && /^[0-9a-f-]{36}$/.test(sp.t) && <ClaimTouchpoint touchpointId={sp.t} />}
-        <Panel>
-          <QuoteForm
+        <QuoteForm
             mode="customer"
             options={options}
             initialService={typeof sp.service === "string" ? sp.service : undefined}
@@ -43,7 +42,6 @@ export default async function QuoteRequestPage({ searchParams }: PageProps<"/lif
             idempotencyKey={randomUUID()}
             minPickup={bangkokLocalInput(Number(lead ?? 120))}
           />
-        </Panel>
       </main>
     </div>
   );

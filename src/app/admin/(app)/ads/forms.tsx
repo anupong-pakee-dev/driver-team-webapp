@@ -109,7 +109,7 @@ export function LandingPublish({ service, published, checks }: { service: string
     <div className="w-full space-y-2 rounded-xl bg-page p-3">
       {checks.map((c) => (
         <label key={c.key} className="flex items-start gap-2">
-          <input type="checkbox" className="mt-0.5 h-5 w-5 accent-navy" checked={sel.includes(c.key)}
+          <input type="checkbox" className="mt-0.5 h-5 w-5 accent-sage" checked={sel.includes(c.key)}
             onChange={(e) => setSel(e.target.checked ? [...sel, c.key] : sel.filter((x) => x !== c.key))} />
           <span>{c.label}</span>
         </label>

@@ -15,6 +15,13 @@ export function formatBangkok(d: Date | string, locale: "th" | "en" | "zh" = "th
   }).format(typeof d === "string" ? new Date(d) : d);
 }
 
+/** ส่วนของวันที่ตามเวลาไทย (ไทย) — ใช้กับแถวรายการแบบ "12 / พ.ย. · 07:00" */
+export function bangkokParts(d: Date | string): { day: string; month: string; time: string } {
+  const date = typeof d === "string" ? new Date(d) : d;
+  const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("th-TH", { timeZone: TZ, ...o }).format(date);
+  return { day: f({ day: "numeric" }), month: f({ month: "short" }), time: f({ hour: "2-digit", minute: "2-digit", hour12: false }) };
+}
+
 /** ค่า datetime-local (YYYY-MM-DDTHH:mm) ตามเวลาไทย หลังจากนี้ minutesAhead นาที */
 export function bangkokLocalInput(minutesAhead = 0, from = new Date()): string {
   return new Date(from.getTime() + minutesAhead * MINUTE + 7 * HOUR).toISOString().slice(0, 16);

@@ -38,12 +38,12 @@ export default async function DocumentsQueue() {
             {pending.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div>
-                  <Link href={`/admin/drivers/${p.driver_id}`} className="font-medium text-navy hover:underline">{p.display_name}</Link>
+                  <Link href={`/admin/drivers/${p.driver_id}`} className="font-medium text-sage hover:underline">{p.display_name}</Link>
                   <span className="text-muted"> · {docType(p.doc_type)?.label}{p.plate && ` · ${p.plate}`}</span>
                   <div className="text-xs text-muted">ส่งเมื่อ {formatBangkok(p.created_at)}</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <a href={`/api/admin/documents/${p.id}/file`} target="_blank" rel="noreferrer" className="text-sm text-navy underline">เปิดไฟล์ ↗</a>
+                  <a href={`/api/admin/documents/${p.id}/file`} target="_blank" rel="noreferrer" className="text-sm text-sage underline">เปิดไฟล์ ↗</a>
                   <Link href={`/admin/drivers/${p.driver_id}`} className="text-sm text-muted underline">ดูข้อมูลที่กรอก</Link>
                   <ReviewButtons docId={p.id} />
                 </div>
@@ -58,7 +58,7 @@ export default async function DocumentsQueue() {
             {expiring.map((e) => (
               <li key={e.id} className="flex items-center justify-between py-2">
                 <span>
-                  <Link href={`/admin/drivers/${e.driver_id}`} className="text-navy hover:underline">{e.display_name}</Link>
+                  <Link href={`/admin/drivers/${e.driver_id}`} className="text-sage hover:underline">{e.display_name}</Link>
                   {" · "}{docType(e.doc_type)?.label}{e.plate && ` · ${e.plate}`}
                 </span>
                 <Badge tone="warn">{e.expires_at}</Badge>

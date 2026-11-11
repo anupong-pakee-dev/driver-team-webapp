@@ -2,20 +2,9 @@ import Link from "next/link";
 import { requireStaffPage } from "@/lib/auth";
 import { asUser } from "@/lib/db";
 import { formatBaht } from "@/lib/money";
-import { formatBangkok } from "@/lib/time";
-import { Badge, Panel } from "@/components/ui";
-
-function Box({ title, n, href, children }: { title: string; n: number; href: string; children?: React.ReactNode }) {
-  return (
-    <Panel>
-      <Link href={href} className="flex items-center justify-between">
-        <h2 className="font-bold">{title}</h2>
-        <Badge tone={n > 0 ? "warn" : "ok"}>{n}</Badge>
-      </Link>
-      {n > 0 && <div className="mt-2 text-sm">{children}</div>}
-    </Panel>
-  );
-}
+import { bangkokParts, formatBangkok } from "@/lib/time";
+import { BOOKING_STATUS_TH, SLIP_REASON_TH } from "@/services/bookingView";
+import { Badge, Empty, btnDark } from "@/components/ui";
 
 // FR-ADMIN-01 กล่องงานวันนี้ — ทุกรายการคลิกไปจัดการได้
 export default async function AdminInbox() {
@@ -73,66 +62,90 @@ export default async function AdminInbox() {
     { ok: d.ready.wht !== null, label: "อัตราหัก ณ ที่จ่ายคนขับ (withholding.rate) — นักบัญชี", href: "/admin/settings" },
   ];
 
+  // 2a: รายการที่ต้องจัดการเรียงตามความเร่งด่วน · กล่องที่ว่างรวมเป็นบรรทัดเดียวด้านล่าง
+  const tint = { bad: "bg-[#fbeeea] text-[#9a3a26]", warn: "bg-[#f6ecd9] text-[#7a5718]", ok: "bg-sage-soft text-sage" } as const;
+  const link = "text-ink hover:underline";
+  const actions: { title: string; n: number; href: string; cta: string; tone: keyof typeof tint; body: React.ReactNode }[] = [
+    { title: "งานรอจ่ายให้คนขับ", n: d.dispatch.length, href: "/admin/bookings?f=active", cta: "มอบหมาย", tone: "bad", body: d.dispatch.map((b) => (
+      <li key={b.id}><Link className={link} href={`/admin/bookings/${b.id}`}>
+        {formatBangkok(b.pickup_at)} · {b.offered_to ? `รอ ${b.offered_to} ตอบ` : <span className="font-semibold text-bad">ไม่มีคนรับ</span>}</Link></li>)) },
+    { title: "เหตุการณ์ / ร้องเรียนเปิดอยู่", n: d.incidents.length + d.complaints.length, href: "/admin/bookings", cta: "ดู", tone: "bad", body: <>
+      {d.incidents.map((i, k) => <li key={`i${k}`}><Link className={link} href={`/admin/bookings/${i.booking_id}`}>{i.type} · {formatBangkok(i.opened_at)}</Link></li>)}
+      {d.complaints.map((c, k) => <li key={`c${k}`}><Link className="text-bad hover:underline" href={`/admin/bookings/${c.booking_id}`}>ร้องเรียน: {String(c.description).slice(0, 60)}</Link></li>)}
+    </> },
+    { title: "สลิปรอยืนยัน", n: d.slips.length, href: "/admin/bookings", cta: "ตรวจ", tone: "warn", body: d.slips.map((p, i) => (
+      <li key={i}><Link className={link} href={`/admin/bookings/${p.booking_id}`}>{formatBaht(p.amount_satang)} · {SLIP_REASON_TH[p.reason ?? ""] ?? p.reason}</Link></li>)) },
+    { title: "รอมัดจำ", n: d.deposit.length, href: "/admin/bookings?f=awaiting_deposit", cta: "ดู", tone: "warn", body: d.deposit.map((b) => (
+      <li key={b.id}><Link className={link} href={`/admin/bookings/${b.id}`}>{formatBangkok(b.pickup_at)} · {formatBaht(b.deposit_satang)}</Link></li>)) },
+    { title: "ส่วนลดรออนุมัติ", n: d.discounts.length, href: "/admin/quotes?f=pending_approval", cta: "อนุมัติ", tone: "warn", body: d.discounts.map((q) => (
+      <li key={q.id}><Link className={link} href={`/admin/quotes/${q.id}`}>{q.number} r{q.revision} · ลด {formatBaht(q.discount_satang)}</Link></li>)) },
+    ...(isOwner ? [{ title: "ต้องโอนคืนลูกค้า", n: d.refunds.length, href: "/admin/bookings", cta: "โอน", tone: "warn" as const, body: d.refunds.map((p, i) => (
+      <li key={i}><Link className={link} href={`/admin/bookings/${p.booking_id}`}>{formatBaht(p.amount_satang)}</Link></li>)) }] : []),
+    { title: "payout รอโอน", n: d.payouts.length, href: "/admin/payouts", cta: "โอน", tone: "ok", body: d.payouts.map((p) => (
+      <li key={p.id}><Link className={link} href="/admin/payouts">{p.display_name} · {formatBaht(p.net_satang)}</Link></li>)) },
+    { title: "เอกสารใกล้หมด (30 วัน) / รอตรวจ", n: d.expiring + (isOwner ? d.pendingDocs : 0), href: isOwner ? "/admin/documents" : "/admin/drivers", cta: "ตรวจ", tone: "ok",
+      body: <li>ใกล้หมด {d.expiring}{isOwner && ` · รอตรวจ ${d.pendingDocs}`}</li> },
+  ];
+  const todo = actions.filter((a) => a.n > 0);
+  const clear = actions.filter((a) => a.n === 0);
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">กล่องงานวันนี้</h1>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[0.8125rem] text-muted">{new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "full" }).format(new Date())}</p>
+          <h1 className="mt-0.5 text-[1.75rem] font-bold">กล่องงานวันนี้</h1>
+        </div>
+        <Link href="/admin/quotes/new" className={`${btnDark} h-[42px] rounded-[0.875rem] px-4 py-0 text-sm`}>+ ออกใบเสนอราคา</Link>
+      </div>
+
       {setup.some((s) => !s.ok) && (
-        <Panel title="ยังต้องตั้งค่าก่อนเปิดรับงานจริง">
-          <ul className="space-y-1 text-sm">
-            {setup.filter((s) => !s.ok).map((s) => <li key={s.label}><Link href={s.href} className="text-warn underline">{s.label}</Link></li>)}
-          </ul>
-        </Panel>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-[0.875rem] bg-[#f6ecd9] px-4 py-3 text-sm text-[#7a5718]">
+          <b>ยังต้องตั้งค่าก่อนเปิดรับงานจริง</b>
+          {setup.filter((s) => !s.ok).map((s) => <Link key={s.label} href={s.href} className="underline">{s.label}</Link>)}
+        </div>
       )}
-      {d.dead > 0 && <p className="rounded-xl bg-bad/10 px-4 py-3 text-sm text-bad">ข้อความแจ้งเตือนส่งไม่สำเร็จ {d.dead} รายการ — โทรแจ้งแทน (§14)</p>}
+      {d.dead > 0 && <p className="rounded-[0.875rem] bg-bad/10 px-4 py-3 text-sm text-bad">ข้อความแจ้งเตือนส่งไม่สำเร็จ {d.dead} รายการ — โทรแจ้งแทน (§14)</p>}
 
-      <Panel title={`งานวันนี้ (${d.today.length})`}>
-        {d.today.length === 0 ? <p className="text-sm text-muted">ไม่มีงานวันนี้</p> : (
-          <ul className="divide-y divide-line text-sm">
-            {d.today.map((b) => (
-              <li key={b.id}><Link href={`/admin/bookings/${b.id}`} className="flex justify-between py-1.5">
-                <span>{formatBangkok(b.pickup_at)} · {b.driver ?? "ยังไม่มีคนขับ"}</span><Badge>{b.status}</Badge></Link></li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+        <section aria-labelledby="todo-h" className="space-y-2.5">
+          <h2 id="todo-h" className="text-[0.9375rem] font-bold">ต้องจัดการ <span className="font-medium text-muted">· เรียงตามความเร่งด่วน</span></h2>
+          {todo.length === 0 && <Empty>ไม่มีงานค้าง</Empty>}
+          {todo.map((a) => (
+            <div key={a.title} className="flex items-start gap-3.5 rounded-2xl border border-line bg-card px-3.5 py-3">
+              <span className={`grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[0.625rem] text-[0.9375rem] font-bold ${tint[a.tone]}`}>{a.n}</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-[0.9375rem] font-semibold">{a.title}</h3>
+                <ul className="mt-0.5 space-y-0.5 text-[0.8125rem] text-muted">{a.body}</ul>
+              </div>
+              <Link href={a.href} className="shrink-0 self-center text-[0.8125rem] font-semibold text-sage hover:underline">{a.cta} →</Link>
+            </div>
+          ))}
+          {clear.length > 0 && <p className="px-0.5 py-1 text-[0.8125rem] text-muted">ไม่มีรายการ: {clear.map((a) => a.title).join(" · ")}</p>}
+        </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Box title="งานรอจ่ายให้คนขับ" n={d.dispatch.length} href="/admin/bookings?f=active">
-          <ul className="space-y-1">{d.dispatch.map((b) => (
-            <li key={b.id}><Link className="text-navy hover:underline" href={`/admin/bookings/${b.id}`}>
-              {formatBangkok(b.pickup_at)} · {b.offered_to ? `รอ ${b.offered_to} ตอบ` : <span className="text-bad">ไม่มีคนรับ</span>}</Link></li>))}</ul>
-        </Box>
-        <Box title="รอมัดจำ" n={d.deposit.length} href="/admin/bookings?f=awaiting_deposit">
-          <ul className="space-y-1">{d.deposit.map((b) => (
-            <li key={b.id}><Link className="text-navy hover:underline" href={`/admin/bookings/${b.id}`}>{formatBangkok(b.pickup_at)} · {formatBaht(b.deposit_satang)}</Link></li>))}</ul>
-        </Box>
-        <Box title="ส่วนลดรออนุมัติ" n={d.discounts.length} href="/admin/quotes?f=pending_approval">
-          <ul className="space-y-1">{d.discounts.map((q) => (
-            <li key={q.id}><Link className="text-navy hover:underline" href={`/admin/quotes/${q.id}`}>{q.number} r{q.revision} · ลด {formatBaht(q.discount_satang)}</Link></li>))}</ul>
-        </Box>
-        <Box title="สลิปรอยืนยัน" n={d.slips.length} href="/admin/bookings">
-          <ul className="space-y-1">{d.slips.map((p, i) => (
-            <li key={i}><Link className="text-navy hover:underline" href={`/admin/bookings/${p.booking_id}`}>{formatBaht(p.amount_satang)} · {p.reason}</Link></li>))}</ul>
-        </Box>
-        {isOwner && (
-          <Box title="ต้องโอนคืนลูกค้า" n={d.refunds.length} href="/admin/bookings">
-            <ul className="space-y-1">{d.refunds.map((p, i) => (
-              <li key={i}><Link className="text-navy hover:underline" href={`/admin/bookings/${p.booking_id}`}>{formatBaht(p.amount_satang)}</Link></li>))}</ul>
-          </Box>
-        )}
-        <Box title="payout รอโอน" n={d.payouts.length} href="/admin/payouts">
-          <ul className="space-y-1">{d.payouts.map((p) => (
-            <li key={p.id}><Link className="text-navy hover:underline" href="/admin/payouts">{p.display_name} · {formatBaht(p.net_satang)}</Link></li>))}</ul>
-        </Box>
-        <Box title="เอกสารใกล้หมด (30 วัน) / รอตรวจ" n={d.expiring + (isOwner ? d.pendingDocs : 0)} href={isOwner ? "/admin/documents" : "/admin/drivers"}>
-          <p>ใกล้หมด {d.expiring}{isOwner && ` · รอตรวจ ${d.pendingDocs}`}</p>
-        </Box>
-        <Box title="เหตุการณ์ / ร้องเรียนเปิดอยู่" n={d.incidents.length + d.complaints.length} href="/admin/bookings">
-          <ul className="space-y-1">
-            {d.incidents.map((i, k) => <li key={`i${k}`}><Link className="text-navy hover:underline" href={`/admin/bookings/${i.booking_id}`}>{i.type} · {formatBangkok(i.opened_at)}</Link></li>)}
-            {d.complaints.map((c, k) => <li key={`c${k}`}><Link className="text-bad hover:underline" href={`/admin/bookings/${c.booking_id}`}>ร้องเรียน: {String(c.description).slice(0, 60)}</Link></li>)}
-          </ul>
-        </Box>
+        <section aria-labelledby="today-h" className="self-start rounded-[1.25rem] border border-line bg-card p-[1.125rem]">
+          <div className="flex justify-between">
+            <h2 id="today-h" className="text-[0.9375rem] font-bold">งานวันนี้</h2>
+            <span className="text-[0.8125rem] text-muted">{d.today.length} งาน</span>
+          </div>
+          {d.today.length === 0 ? <p className="mt-3 text-sm text-muted">ไม่มีงานวันนี้</p> : (
+            <ul className="mt-3">
+              {d.today.map((b) => {
+                const st = BOOKING_STATUS_TH[b.status] ?? [b.status, "info"];
+                return (
+                  <li key={b.id} className="border-t border-[#eee8dc]">
+                    <Link href={`/admin/bookings/${b.id}`} className="flex items-center gap-3.5 py-3">
+                      <span className="w-[52px] shrink-0 font-mono text-[0.9375rem] font-semibold">{bangkokParts(b.pickup_at).time}</span>
+                      <span className={"min-w-0 flex-1 text-sm font-semibold " + (b.driver ? "" : "text-muted")}>{b.driver ?? "ยังไม่มีคนขับ"}</span>
+                      <Badge tone={st[1]}>{st[0]}</Badge>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

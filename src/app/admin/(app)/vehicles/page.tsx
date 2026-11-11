@@ -53,7 +53,7 @@ export default async function VehiclesPage({ searchParams }: PageProps<"/admin/v
                     <td className="py-3 pr-3 font-medium">{v.plate}</td>
                     <td className="py-3 pr-3">{carLabel(v.car_type)}</td>
                     <td className="py-3 pr-3">
-                      <Link className="text-navy hover:underline" href={`/admin/drivers/${v.driver_id}`}>{v.driver_name}</Link>
+                      <Link className="text-sage hover:underline" href={`/admin/drivers/${v.driver_id}`}>{v.driver_name}</Link>
                     </td>
                     <td className="py-3">
                       <Reasons reasons={[...new Set([...(v.services.find((s) => s.service === service)?.reasons ?? []), ...v.driver_reasons])]} />

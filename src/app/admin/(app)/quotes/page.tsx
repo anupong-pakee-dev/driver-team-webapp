@@ -59,7 +59,7 @@ export default async function QuotesPage({ searchParams }: PageProps<"/admin/quo
                   return (
                     <tr key={q.id}>
                       <td className="py-2.5 pr-3">
-                        <Link href={`/admin/quotes/${q.id}`} className="font-medium text-navy hover:underline">
+                        <Link href={`/admin/quotes/${q.id}`} className="font-medium text-sage hover:underline">
                           {q.number}{q.revision > 1 && ` r${q.revision}`}
                         </Link>
                       </td>

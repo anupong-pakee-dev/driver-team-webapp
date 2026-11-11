@@ -43,14 +43,14 @@ export default async function Landing({ params, searchParams }: PageProps<"/l/[s
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-      <header className="bg-navy px-5 pb-8 pt-5 text-white">
+      <header className="px-5 pb-2 pt-[1.125rem]">
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold">{localized(brand, "name", lang)}</span>
+          <span className="text-[1.0625rem] font-bold tracking-tight">{localized(brand, "name", lang)}</span>
           <I18nProvider locale={lang}><LanguageSwitcher /></I18nProvider>
         </div>
-        <h1 className="mt-6 text-[1.7rem] font-bold leading-snug">{title}</h1>
-        <p className="mt-2 text-white/85">{sub}</p>
-        <p className="mt-3 flex items-center gap-2 text-sm text-amber-soft"><ShieldCheck className="h-5 w-5" />{t.catalog.trust}</p>
+        <h1 className="mt-6 text-[1.75rem] font-bold leading-[1.3] tracking-tight">{title}</h1>
+        <p className="mt-2 text-muted">{sub}</p>
+        <p className="mt-3 flex items-center gap-2 text-[0.8125rem] text-muted"><ShieldCheck className="h-4 w-4 text-sage" />{t.catalog.trust}</p>
       </header>
       <main className="flex-1 space-y-3 px-5 py-5 pb-10">
         {items.length === 0 ? (
@@ -69,9 +69,9 @@ export default async function Landing({ params, searchParams }: PageProps<"/l/[s
         ))}
         {items.length > 0 && <QuoteCta service={service} label={t.catalog.cta} className={`${btnPrimary} w-full py-4 text-lg`} />}
         <ul className="grid grid-cols-3 pt-4 text-center text-sm text-muted">
-          <li className="flex flex-col items-center gap-1.5"><Card className="h-6 w-6 text-navy" />{t.catalog.pay}</li>
-          <li className="flex flex-col items-center gap-1.5"><Pin className="h-6 w-6 text-navy" />{t.landing.track}</li>
-          <li className="flex flex-col items-center gap-1.5"><Receipt className="h-6 w-6 text-navy" />{t.catalog.receipt}</li>
+          <li className="flex flex-col items-center gap-1.5"><Card className="h-6 w-6 text-sage" />{t.catalog.pay}</li>
+          <li className="flex flex-col items-center gap-1.5"><Pin className="h-6 w-6 text-sage" />{t.landing.track}</li>
+          <li className="flex flex-col items-center gap-1.5"><Receipt className="h-6 w-6 text-sage" />{t.catalog.receipt}</li>
         </ul>
         <p className="pt-6 text-center text-xs text-muted">
           <Link href="/" className="underline">{t.landing.all}</Link> · <Link href="/privacy" className="underline">{t.landing.privacy}</Link>

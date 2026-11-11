@@ -93,7 +93,7 @@ export async function DispatchPanel({ user, bookingId, status }: { user: Session
                 {c.distance_from_target_m != null && (
                   <Badge tone={c.distance_from_target_m > 500 ? "warn" : "ok"}>ห่างจุดนัด {c.distance_from_target_m} ม.</Badge>
                 )}
-                {c.has_photo && <a className="text-navy underline" target="_blank" rel="noreferrer" href={`/api/admin/files?checkin=${c.id}`}>รูป ↗</a>}
+                {c.has_photo && <a className="text-sage underline" target="_blank" rel="noreferrer" href={`/api/admin/files?checkin=${c.id}`}>รูป ↗</a>}
               </li>
             ))}
           </ul>
@@ -108,7 +108,7 @@ export async function DispatchPanel({ user, bookingId, status }: { user: Session
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone={i.status === "open" ? "warn" : "ok"}>{INCIDENT_TH[i.type]}</Badge>
                   <span className="text-xs text-muted">{i.by} · {formatBangkok(i.opened_at)}</span>
-                  {i.has_photo && <a className="text-navy underline" target="_blank" rel="noreferrer" href={`/api/admin/files?incident=${i.id}`}>รูป ↗</a>}
+                  {i.has_photo && <a className="text-sage underline" target="_blank" rel="noreferrer" href={`/api/admin/files?incident=${i.id}`}>รูป ↗</a>}
                 </div>
                 <p>{i.description}</p>
                 {i.actions && <p className="text-xs text-muted">ทำแล้ว: {i.actions}</p>}

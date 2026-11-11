@@ -75,7 +75,7 @@ export default async function AdminQuote({ params }: PageProps<"/admin/quotes/[i
               const st = QUOTE_STATUS_TH[r.status] ?? [r.status, "info"];
               return (
                 <li key={r.id} className="flex items-start justify-between gap-2">
-                  <Link href={`/admin/quotes/${r.id}`} className={r.id === q.id ? "font-bold" : "text-navy hover:underline"}>
+                  <Link href={`/admin/quotes/${r.id}`} className={r.id === q.id ? "font-bold" : "text-sage hover:underline"}>
                     rev.{r.revision} · {formatBaht(r.final_satang)}
                     <span className="block text-xs font-normal text-muted">
                       {r.by} · {formatBangkok(r.created_at)}{r.discount_reason && ` · ${r.discount_reason}`}

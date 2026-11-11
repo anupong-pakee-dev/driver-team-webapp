@@ -32,7 +32,7 @@ export function PriceRuleEditor({ rule, newFor, carOptions }: {
 
   if (!open) {
     return (
-      <button className={rule ? "mt-1 text-sm text-navy underline" : btnSecondary} onClick={() => setOpen(true)}>
+      <button className={rule ? "mt-1 text-sm text-sage underline" : btnSecondary} onClick={() => setOpen(true)}>
         {rule ? "แก้ราคา" : "+ เปิดขายรถประเภทอื่น"}
       </button>
     );

@@ -9,6 +9,7 @@ export const en: Messages = {
     noLiff: "The customer LIFF ID has not been set up yet",
     devLogin: "Test sign-in (local)",
     logout: "Sign out",
+    back: "Back",
     print: "Save PDF / Print",
     cancel: "Cancel",
     failed: "Something went wrong",
@@ -266,6 +267,7 @@ export const en: Messages = {
     submit: "Confirm and pay deposit",
   },
   booking: {
+    steps: ["Deposit", "Confirmed", "Driver", "On trip", "Done"],
     title: "My booking",
     loginTitle: "Booking",
     status: "Status",

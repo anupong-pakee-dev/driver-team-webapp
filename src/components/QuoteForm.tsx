@@ -7,7 +7,7 @@ import { apiErrorText } from "@/i18n";
 import { formatBaht } from "@/lib/money";
 import { useI18n } from "./I18nProvider";
 import { LocationInput, type PickedPlace } from "./LocationInput";
-import { btnPrimary, btnSecondary, input } from "./ui";
+import { btnPrimary, btnSecondary, floatBar, input, segItem, segWrap } from "./ui";
 
 const SOURCES = ["facebook", "google", "tiktok", "line", "friend", "repeat", "other"] as const;
 
@@ -128,15 +128,14 @@ export function QuoteForm({
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">{f.service}</legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className={`${segWrap} ${services.length > 3 ? "grid-cols-2" : "grid-cols-3"}`}>
           {services.map((s) => (
             <button
               key={s.service_type}
               type="button"
               onClick={() => chooseService(s.service_type)}
               aria-pressed={s.service_type === service}
-              className={"min-h-12 rounded-[var(--radius-btn)] px-2 text-sm font-medium " +
-                (s.service_type === service ? "bg-navy text-white" : "border border-line bg-card")}
+              className={segItem(s.service_type === service)}
             >
               {s.label}
             </button>
@@ -149,10 +148,10 @@ export function QuoteForm({
         <div className="space-y-2">
           {svc.cars.map((c) => (
             <label key={c.car_type}
-              className={"flex cursor-pointer items-center justify-between rounded-xl bg-card px-3.5 py-3 " +
-                (c.car_type === car ? "border-2 border-navy" : "border border-line")}>
+              className={"flex cursor-pointer items-center justify-between rounded-[1.125rem] bg-card px-3.5 py-3 " +
+                (c.car_type === car ? "border-2 border-sage" : "border border-line")}>
               <span className="flex items-center gap-3">
-                <input type="radio" name="car" value={c.car_type} aria-label={c.label} className="accent-navy" checked={c.car_type === car} onChange={() => setCar(c.car_type)} />
+                <input type="radio" name="car" value={c.car_type} aria-label={c.label} className="accent-sage" checked={c.car_type === car} onChange={() => setCar(c.car_type)} />
                 <span>
                   <span className="block font-medium">{c.label}</span>
                   {c.seats && <span className="block text-xs text-muted">{t.seats(c.seats, c.luggage ?? 0)}</span>}
@@ -165,32 +164,38 @@ export function QuoteForm({
       </fieldset>
 
       {isAirport && (
-        <div className="space-y-3 rounded-xl bg-page p-3">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <label className="space-y-1">
-              <span className="text-sm font-medium">{f.airport}</span>
-              <select className={input} value={airport} onChange={(e) => setAirport(e.target.value as "BKK" | "DMK")}>
-                <option value="BKK">{f.bkk}</option>
-                <option value="DMK">{f.dmk}</option>
-              </select>
+        <div className="space-y-4">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold text-muted">{f.airport} · {f.direction}</legend>
+            <div className={`${segWrap} grid-cols-2`}>
+              {(["BKK", "DMK"] as const).map((a) => (
+                <button key={a} type="button" aria-pressed={airport === a} onClick={() => setAirport(a)} className={segItem(airport === a)}>
+                  {a === "BKK" ? f.bkk : f.dmk}
+                </button>
+              ))}
+            </div>
+            <div className={`${segWrap} grid-cols-2`}>
+              {(["arrival", "departure"] as const).map((d) => (
+                <button key={d} type="button" aria-pressed={direction === d} onClick={() => setDirection(d)} className={segItem(direction === d)}>
+                  {d === "arrival" ? f.arrival : f.departure}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <div className="space-y-2">
+            <label htmlFor="flight-no" className="block text-sm font-semibold text-muted">
+              {f.flightNo} {!noFlight && <span className="text-bad">*</span>}
             </label>
-            <label className="space-y-1">
-              <span className="text-sm font-medium">{f.direction}</span>
-              <select className={input} value={direction} onChange={(e) => setDirection(e.target.value as "arrival" | "departure")}>
-                <option value="arrival">{f.arrival}</option>
-                <option value="departure">{f.departure}</option>
-              </select>
-            </label>
+            <div className="flex gap-2">
+              <input id="flight-no" className={`${input} flex-1 font-semibold tracking-wide`} value={flightNo} disabled={noFlight} placeholder={f.flightPh}
+                onChange={(e) => setFlightNo(e.target.value.toUpperCase())} />
+              <label className={"flex max-w-[45%] cursor-pointer items-center gap-2 rounded-[0.875rem] border px-3 text-xs leading-tight " +
+                (noFlight ? "border-sage bg-sage-soft font-semibold text-sage" : "border-line text-muted")}>
+                <input type="checkbox" className="h-4 w-4 shrink-0 accent-sage" checked={noFlight} onChange={(e) => setNoFlight(e.target.checked)} />
+                {f.noFlight}
+              </label>
+            </div>
           </div>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium">{f.flightNo} {!noFlight && <span className="text-bad">*</span>}</span>
-            <input className={input} value={flightNo} disabled={noFlight} placeholder={f.flightPh}
-              onChange={(e) => setFlightNo(e.target.value.toUpperCase())} />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="h-5 w-5 accent-navy" checked={noFlight} onChange={(e) => setNoFlight(e.target.checked)} />
-            {f.noFlight}
-          </label>
         </div>
       )}
 
@@ -209,7 +214,7 @@ export function QuoteForm({
             </div>
           ))}
           {stops.length < 5 && (
-            <button type="button" className="text-sm text-navy underline" onClick={() => setStops([...stops, null])}>{f.addStop}</button>
+            <button type="button" className="text-sm text-sage underline" onClick={() => setStops([...stops, null])}>{f.addStop}</button>
           )}
           {!isCharter && <LocationInput label={f.destination} value={destination} onChange={setDestination} required />}
         </>
@@ -270,7 +275,7 @@ export function QuoteForm({
       {mode === "staff" && (
         <div className="space-y-2 rounded-xl bg-page p-3">
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" className="h-5 w-5 accent-navy" checked={manual} onChange={(e) => setManual(e.target.checked)} />
+            <input type="checkbox" className="h-5 w-5 accent-sage" checked={manual} onChange={(e) => setManual(e.target.checked)} />
             {f.manual}
           </label>
           {manual && (
@@ -288,10 +293,22 @@ export function QuoteForm({
         </ul>
       )}
 
-      <div className="flex gap-2">
-        <button className={`${btnPrimary} flex-1`} disabled={busy}>{busy ? f.submitting : f.submit}</button>
-        {mode === "staff" && <button type="button" className={btnSecondary} onClick={() => router.back()}>{f.back}</button>}
-      </div>
+      {mode === "customer" ? (
+        <div className={floatBar}>
+          <div className="min-w-0">
+            <div className="truncate text-xs text-on-dark">{carInfo?.label ?? svc.label} · {svc.label}</div>
+            <div className="text-xl font-bold">{carInfo ? `${f.from} ${formatBaht(carInfo.from_satang)}` : "—"}</div>
+          </div>
+          <button className="flex h-[52px] shrink-0 items-center rounded-[1.125rem] bg-sand px-5 text-base font-bold text-forest disabled:opacity-50" disabled={busy}>
+            {busy ? f.submitting : f.submit}
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button className={`${btnPrimary} flex-1`} disabled={busy}>{busy ? f.submitting : f.submit}</button>
+          <button type="button" className={btnSecondary} onClick={() => router.back()}>{f.back}</button>
+        </div>
+      )}
       <p className="text-center text-xs text-muted">{f.footer}</p>
     </form>
   );

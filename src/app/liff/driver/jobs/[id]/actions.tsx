@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { btnPrimary, btnSecondary, input } from "@/components/ui";
+import { btnPrimary, btnSage, btnSecondary, input } from "@/components/ui";
 
 const STEP_TH = { depart: "ออกเดินทาง", arrive: "ถึงจุดรับแล้ว", pickup: "รับผู้โดยสารแล้ว", dropoff: "ส่งถึงที่หมายแล้ว" } as const;
 const WARN_TH: Record<string, string> = {
@@ -56,18 +56,20 @@ export function TripStepButton({ bookingId, step, needsPhoto }: { bookingId: str
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {needsPhoto && (
-        <label className="block space-y-1">
+        <label className="block space-y-1 rounded-[1.125rem] border border-line bg-card p-3 shadow-sm">
           <span className="text-sm font-medium">ถ่ายรูป{step === "pickup" ? "ตอนรับ" : "ตอนส่ง"} <span className="text-bad">*</span></span>
           <input type="file" accept="image/*" capture="environment" className="block w-full text-sm"
             onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
         </label>
       )}
-      <button className={`${btnPrimary} w-full py-4 text-lg`} disabled={busy} onClick={go}>
+      {msg && <p className="rounded-xl bg-card px-3 py-2 text-sm text-bad shadow-sm" role="alert">{msg}</p>}
+      <button className={`${btnSage} h-16 w-full text-[1.1875rem]`} disabled={busy} onClick={go}>
         {busy ? "กำลังบันทึก…" : STEP_TH[step]}
+        {!busy && <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
       </button>
-      {msg && <p className="text-sm text-bad">{msg}</p>}
+      <p className="text-center text-[0.7rem] text-muted">บันทึก GPS อัตโนมัติเมื่อกด</p>
     </div>
   );
 }
@@ -86,13 +88,14 @@ export function ContactButton({ bookingId }: { bookingId: string }) {
   }
   return (
     <div>
-      <button className={`${btnSecondary} w-full`} onClick={async () => {
+      <button className="w-full text-left" onClick={async () => {
         const res = await fetch(`/api/bookings/${bookingId}/contact`);
         if (res.ok) return setC(await res.json());
         const out = await res.json().catch(() => null);
         setMsg(out?.error?.details?.reason === "CONTACT_WINDOW" ? "ยังไม่ถึงช่วงเวลาที่เปิดดูได้" : out?.error?.message_th ?? "เปิดไม่ได้");
       }}>
-        ดูชื่อและเบอร์ลูกค้า
+        <span className="block text-sm font-semibold">ดูชื่อและเบอร์ลูกค้า</span>
+        <span className="mt-0.5 block text-[0.7rem] text-muted">เปิดได้ 2 ชม. ก่อนรับ</span>
       </button>
       {msg && <p className="mt-2 text-sm text-bad">{msg}</p>}
     </div>
@@ -104,9 +107,9 @@ export function IncidentForm({ bookingId, canNoShow }: { bookingId: string; canN
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  if (!open) return <button className={`${btnSecondary} w-full`} onClick={() => setOpen(true)}>แจ้งปัญหา / เหตุการณ์</button>;
+  if (!open) return <button className="text-[0.8125rem] text-muted underline-offset-2 hover:underline" onClick={() => setOpen(true)}>แจ้งปัญหา / เหตุการณ์</button>;
   return (
-    <form className="space-y-2" onSubmit={async (e) => {
+    <form className="w-full space-y-2" onSubmit={async (e) => {
       e.preventDefault();
       const body = new FormData(e.currentTarget);
       const photo = body.get("photo");
@@ -144,9 +147,9 @@ export function DriverCancel({ bookingId }: { bookingId: string }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [open, setOpen] = useState(false);
-  if (!open) return <button className="w-full text-sm text-bad underline" onClick={() => setOpen(true)}>ขอยกเลิกงานนี้</button>;
+  if (!open) return <button className="text-[0.8125rem] text-muted underline-offset-2 hover:underline" onClick={() => setOpen(true)}>ยกเลิกงาน</button>;
   return (
-    <div className="space-y-2">
+    <div className="w-full space-y-2">
       <p className="text-sm text-muted">ระบบจะเสนองานให้คนอื่นทันที — ยกเลิกบ่อยมีผลต่อคะแนน</p>
       <input className={input} placeholder="เหตุผล" value={reason} onChange={(e) => setReason(e.target.value)} />
       <button className="w-full rounded-[var(--radius-btn)] bg-bad px-4 py-3 font-bold text-white disabled:opacity-50" disabled={reason.trim().length < 3}

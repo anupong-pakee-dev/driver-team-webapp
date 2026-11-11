@@ -12,7 +12,7 @@ const ERR: Record<string, string> = {
 };
 
 // FR-DISP-02 รับ/ปฏิเสธ (ปฏิเสธต้องมีเหตุผล)
-export function OfferActions({ offerId }: { offerId: string }) {
+export function OfferActions({ offerId, dark = false }: { offerId: string; dark?: boolean }) {
   const router = useRouter();
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
@@ -44,19 +44,26 @@ export function OfferActions({ offerId }: { offerId: string }) {
         <div className="flex gap-2">
           <button className="flex-1 rounded-[var(--radius-btn)] bg-bad px-4 py-3 font-bold text-white disabled:opacity-50"
             disabled={!reason || busy} onClick={() => send("reject", { reason })}>ยืนยันปฏิเสธ</button>
-          <button className={`${btnSecondary} flex-1`} onClick={() => setRejecting(false)}>กลับ</button>
+          <button className={dark ? "flex-1 rounded-2xl border border-white/25 px-4 py-3 font-medium" : `${btnSecondary} flex-1`} onClick={() => setRejecting(false)}>กลับ</button>
         </div>
-        {msg && <p className="text-sm text-bad">{msg}</p>}
+        {msg && <p className={"text-sm " + (dark ? "text-[#f3b8a8]" : "text-bad")}>{msg}</p>}
       </div>
     );
   }
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
-        <button className={`${btnPrimary} flex-1`} disabled={busy} onClick={() => send("accept", {})}>รับงาน</button>
-        <button className={`${btnSecondary} flex-1`} onClick={() => setRejecting(true)}>ปฏิเสธ</button>
-      </div>
-      {msg && <p className="text-sm text-bad">{msg}</p>}
+      {dark ? (
+        <div className="grid grid-cols-[1fr_2fr] gap-2">
+          <button className="h-[50px] rounded-2xl border border-white/25 font-medium" onClick={() => setRejecting(true)}>ปฏิเสธ</button>
+          <button className="h-[50px] rounded-2xl bg-sand text-base font-bold text-forest disabled:opacity-50" disabled={busy} onClick={() => send("accept", {})}>รับงาน</button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button className={`${btnPrimary} flex-1`} disabled={busy} onClick={() => send("accept", {})}>รับงาน</button>
+          <button className={`${btnSecondary} flex-1`} onClick={() => setRejecting(true)}>ปฏิเสธ</button>
+        </div>
+      )}
+      {msg && <p className={"text-sm " + (dark ? "text-[#f3b8a8]" : "text-bad")}>{msg}</p>}
     </div>
   );
 }

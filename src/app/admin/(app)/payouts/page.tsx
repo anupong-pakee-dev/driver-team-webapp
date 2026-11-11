@@ -63,7 +63,7 @@ export default async function PayoutsPage() {
       {held.rows.length > 0 && (
         <Panel title={`พักเงิน — มีข้อร้องเรียน (${held.rows.length})`}>
           <ul className="space-y-1 text-sm">
-            {held.rows.map((h) => <li key={h.id}><a className="text-navy underline" href={`/admin/bookings/${h.id}`}>{h.display_name} · {formatBangkok(h.pickup_at)}</a></li>)}
+            {held.rows.map((h) => <li key={h.id}><a className="text-sage underline" href={`/admin/bookings/${h.id}`}>{h.display_name} · {formatBangkok(h.pickup_at)}</a></li>)}
           </ul>
         </Panel>
       )}

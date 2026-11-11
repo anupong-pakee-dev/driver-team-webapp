@@ -3,20 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// เมนูตาม §3 · รายการที่ยังไม่สร้างแสดงเฟสที่จะมา
-const ITEMS: { href?: string; label: string; phase?: number }[] = [
-  { href: "/admin", label: "กล่องงานวันนี้" },
+// เมนูตาม §3 · ดีไซน์ 2a: จัดกลุ่มด้วยหัวข้อเล็ก · หน้าที่อยู่เป็นพื้นเขียวเข้ม
+const ITEMS: { href?: string; label: string; phase?: number; head?: string }[] = [
+  { href: "/admin", label: "กล่องงานวันนี้", head: "งานประจำวัน" },
   { href: "/admin/usage", label: "ภาพรวมการใช้งาน" },
   { href: "/admin/quotes", label: "ใบเสนอราคา" },
   { href: "/admin/bookings", label: "การจอง / การเงิน" },
   { href: "/admin/payouts", label: "จ่ายเงินคนขับ" },
-  { href: "/admin/drivers", label: "คนขับ" },
+  { href: "/admin/drivers", label: "คนขับ", head: "ทีม" },
   { href: "/admin/vehicles", label: "รถ" },
   { href: "/admin/documents", label: "ตรวจเอกสาร" },
   { href: "/admin/compliance", label: "กฎ ขบ." },
-  { href: "/admin/ads", label: "แคมเปญ / แอด" },
+  { href: "/admin/ads", label: "แคมเปญ / แอด", head: "ธุรกิจ" },
   { href: "/admin/reports", label: "รายงาน / Export" },
-  { href: "/admin/users", label: "ผู้ใช้" },
+  { href: "/admin/users", label: "ผู้ใช้", head: "ระบบ" },
   { href: "/admin/prices", label: "ราคา" },
   { href: "/admin/settings", label: "ตั้งค่า" },
   { href: "/admin/audit", label: "บันทึกการแก้ไข" },
@@ -26,26 +26,34 @@ const ITEMS: { href?: string; label: string; phase?: number }[] = [
 export function AdminNav() {
   const path = usePathname();
   return (
-    <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible">
-      {ITEMS.map((it) =>
-        it.href ? (
-          <Link
-            key={it.label}
-            href={it.href}
-            className={
-              "whitespace-nowrap rounded-lg px-3 py-2 text-sm " +
-              (path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/")) ? "bg-white/15 font-semibold" : "text-white/85 hover:bg-white/10")
-            }
-          >
-            {it.label}
-          </Link>
-        ) : (
-          <span key={it.label} className="flex items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm text-white/40">
-            {it.label}
-            <span className="rounded bg-white/10 px-1.5 text-[0.65rem]">เฟส {it.phase}</span>
-          </span>
-        ),
-      )}
+    <nav aria-label="เมนูหลังบ้าน" className="flex gap-0.5 overflow-x-auto px-3 pb-3 md:flex-col md:overflow-visible md:px-3.5">
+      {ITEMS.map((it) => {
+        const on = !!it.href && (path === it.href || (it.href !== "/admin" && path.startsWith(it.href + "/")));
+        return (
+          <div key={it.label} className="contents">
+            {it.head && (
+              <span className="hidden px-2.5 pb-1 pt-3 font-mono text-[0.7rem] font-medium tracking-wide text-muted md:block">{it.head}</span>
+            )}
+            {it.href ? (
+              <Link
+                href={it.href}
+                aria-current={on ? "page" : undefined}
+                className={
+                  "whitespace-nowrap rounded-[0.625rem] px-2.5 py-[0.4375rem] text-sm " +
+                  (on ? "bg-forest font-semibold text-white" : "text-[#3c4a43] hover:bg-chip")
+                }
+              >
+                {it.label}
+              </Link>
+            ) : (
+              <span className="flex items-center justify-between gap-2 whitespace-nowrap rounded-[0.625rem] px-2.5 py-[0.4375rem] text-sm text-muted">
+                {it.label}
+                <span className="rounded bg-chip px-1.5 text-[0.65rem]">เฟส {it.phase}</span>
+              </span>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }

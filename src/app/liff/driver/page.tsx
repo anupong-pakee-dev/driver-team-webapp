@@ -2,7 +2,7 @@ import Link from "next/link";
 import { asUser } from "@/lib/db";
 import { formatBaht } from "@/lib/money";
 import { getSetting } from "@/lib/settings";
-import { formatBangkok } from "@/lib/time";
+import { bangkokParts, formatBangkok } from "@/lib/time";
 import { carLabel, docSlots, SERVICE_TYPES } from "@/services/portal";
 import { BOOKING_STATUS_TH } from "@/services/bookingView";
 import { driverJobs, driverOffers } from "@/services/driverJobs";
@@ -46,25 +46,44 @@ export default async function DriverHome() {
   const svc = (s: string) => SERVICE_TYPES.find((x) => x.value === s)?.label ?? s;
 
   return (
-    <DriverShell title={user.displayName ?? "คนขับ"} subtitle="งานของฉัน" active="home">
+    <DriverShell
+      title={user.displayName ?? "คนขับ"}
+      subtitle="งานของฉัน"
+      active="home"
+      extra={ready && (
+        <span className="flex items-center gap-1.5 rounded-full bg-sage-soft py-1.5 pl-2 pr-3 text-[0.8125rem] font-semibold text-sage">
+          <span className="h-2 w-2 rounded-full bg-sage" aria-hidden="true" />พร้อมรับงาน
+        </span>
+      )}
+    >
+      {/* 2a: ข้อเสนองานใหม่เป็นการ์ดสีเข้ม — ค่างานเด่น ปุ่มรับงานกว้างกว่าปุ่มปฏิเสธ */}
       {pending.map((o) => (
-        <Panel key={o.id} className="ring-2 ring-amber">
-          <div className="flex items-center justify-between">
-            <span className="font-bold">งานใหม่!</span>
-            <Badge tone="warn">ตอบภายใน {formatBangkok(o.expires_at)}</Badge>
+        <section key={o.id} aria-label="งานใหม่" className="rounded-3xl bg-forest p-[1.125rem] text-white">
+          <p className="text-[0.8125rem] font-semibold text-sand">งานใหม่ · ตอบภายใน {formatBangkok(o.expires_at)}</p>
+          <div className="mt-2.5 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-2xl font-bold leading-tight">{formatBangkok(o.pickup_at)}</div>
+              <div className="text-[0.8125rem] text-on-dark">{svc(o.service_type)} · {carLabel(o.car_type)}{o.plate && ` (${o.plate})`}</div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="text-[0.7rem] text-on-dark">ค่างานโดยประมาณ</div>
+              <div className="text-[1.625rem] font-bold leading-none text-sand">{formatBaht(Math.round(o.price_satang * (1 - Number(commission ?? 0.2))))}</div>
+            </div>
           </div>
-          <dl className="mt-2 space-y-1 text-sm">
-            <div className="flex justify-between gap-3"><dt className="text-muted">วันเวลา</dt><dd className="font-medium">{formatBangkok(o.pickup_at)}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-muted">บริการ</dt><dd>{svc(o.service_type)} · {carLabel(o.car_type)}{o.plate && ` (${o.plate})`}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-muted">รับ</dt><dd className="text-right">{o.origin?.name}</dd></div>
-            {o.destination && <div className="flex justify-between gap-3"><dt className="text-muted">ส่ง</dt><dd className="text-right">{o.destination.name}</dd></div>}
-            <div className="flex justify-between gap-3"><dt className="text-muted">ผู้โดยสาร</dt><dd>{o.pax} คน · {o.luggage} กระเป๋า</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-muted">ค่างานโดยประมาณ</dt>
-              <dd className="font-bold">{formatBaht(Math.round(o.price_satang * (1 - Number(commission ?? 0.2))))}</dd></div>
-          </dl>
-          <p className="mb-3 text-xs text-muted">ก่อนหัก ณ ที่จ่าย · ไม่รวมทางด่วน/ค่าจอด (เบิกตามจริง)</p>
-          <OfferActions offerId={o.id} />
-        </Panel>
+          <div className="mt-3.5 flex gap-2.5 rounded-2xl bg-white/[.07] p-3">
+            <div className="flex flex-col items-center pt-1.5" aria-hidden="true">
+              <span className="h-2 w-2 rounded-full border-2 border-sand" />
+              {o.destination && <><span className="my-[3px] w-0.5 flex-1 bg-white/20" /><span className="h-2 w-2 rounded-full bg-sand" /></>}
+            </div>
+            <dl className="flex min-w-0 flex-1 flex-col gap-2 text-sm">
+              <div><dt className="sr-only">รับ</dt><dd>{o.origin?.name}</dd></div>
+              {o.destination && <div><dt className="sr-only">ส่ง</dt><dd>{o.destination.name}</dd></div>}
+            </dl>
+            <span className="self-end whitespace-nowrap text-xs text-on-dark">{o.pax} คน · {o.luggage} กระเป๋า</span>
+          </div>
+          <div className="mt-3.5"><OfferActions offerId={o.id} dark /></div>
+          <p className="mt-2.5 text-center text-[0.7rem] text-on-dark">ก่อนหัก ณ ที่จ่าย · ไม่รวมทางด่วน/ค่าจอด (เบิกตามจริง)</p>
+        </section>
       ))}
 
       {!ready && (
@@ -83,23 +102,34 @@ export default async function DriverHome() {
         </Panel>
       )}
 
-      <Panel title="งานที่รับแล้ว">
-        {jobs.length === 0 ? <Empty>ยังไม่มีงาน</Empty> : (
-          <ul className="divide-y divide-line">
-            {jobs.map((j) => (
-              <li key={j.id}>
-                <Link href={`/liff/driver/jobs/${j.id}`} className="flex items-center justify-between py-3">
-                  <div>
-                    <div className="font-medium">{formatBangkok(j.pickup_at)}</div>
-                    <div className="text-sm text-muted">{svc(j.service_type)} · {carLabel(j.car_type)}</div>
-                  </div>
-                  <Badge tone={BOOKING_STATUS_TH[j.status]?.[1]}>{BOOKING_STATUS_TH[j.status]?.[0]}</Badge>
-                </Link>
-              </li>
-            ))}
+      <section aria-labelledby="jobs-h" className="pt-2">
+        <div className="flex items-baseline justify-between px-1">
+          <h2 id="jobs-h" className="text-base font-bold">งานที่รับแล้ว</h2>
+          <span className="text-[0.8125rem] text-muted">คะแนน {status.driver?.score ?? "—"}</span>
+        </div>
+        {jobs.length === 0 ? <div className="mt-2.5"><Empty>ยังไม่มีงาน</Empty></div> : (
+          <ul className="mt-2.5 space-y-2">
+            {jobs.map((j) => {
+              const d = bangkokParts(j.pickup_at);
+              return (
+                <li key={j.id}>
+                  <Link href={`/liff/driver/jobs/${j.id}`} className="flex items-center gap-3 rounded-[1.125rem] border border-line bg-card px-3.5 py-3">
+                    <div className="w-11 shrink-0 text-center">
+                      <div className="text-lg font-bold leading-none">{d.day}</div>
+                      <div className="text-[0.7rem] text-muted">{d.month}</div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[0.9375rem] font-semibold">{d.time} · {svc(j.service_type)}</div>
+                      <div className="truncate text-xs text-muted">{carLabel(j.car_type)}</div>
+                    </div>
+                    <Badge tone={BOOKING_STATUS_TH[j.status]?.[1]}>{BOOKING_STATUS_TH[j.status]?.[0]}</Badge>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
-      </Panel>
+      </section>
 
       {history.length > 0 && (
         <Panel title="ประวัติข้อเสนองาน">
@@ -113,7 +143,6 @@ export default async function DriverHome() {
           </ul>
         </Panel>
       )}
-      <p className="text-center text-sm text-muted">คะแนน {status.driver?.score ?? "—"}</p>
     </DriverShell>
   );
 }

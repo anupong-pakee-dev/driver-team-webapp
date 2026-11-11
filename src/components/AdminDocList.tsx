@@ -48,7 +48,7 @@ export function AdminDocList({ slots, canReview, labels = {} }: { slots: DocSlot
                 </dl>
                 <div className="flex flex-col items-end gap-2">
                   {canReview && (
-                    <a href={`/api/admin/documents/${l.id}/file`} target="_blank" rel="noreferrer" className="text-sm text-navy underline">
+                    <a href={`/api/admin/documents/${l.id}/file`} target="_blank" rel="noreferrer" className="text-sm text-sage underline">
                       เปิดไฟล์ ↗
                     </a>
                   )}

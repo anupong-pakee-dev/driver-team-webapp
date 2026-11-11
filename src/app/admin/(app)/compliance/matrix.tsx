@@ -67,7 +67,7 @@ export function MatrixEditor({
                     <td key={c.value} className="px-2 py-2 text-center">
                       <input
                         type="checkbox"
-                        className="h-5 w-5 accent-navy"
+                        className="h-5 w-5 accent-sage"
                         checked={sel.has(key)}
                         disabled={!canEdit}
                         onChange={() => toggle(key)}

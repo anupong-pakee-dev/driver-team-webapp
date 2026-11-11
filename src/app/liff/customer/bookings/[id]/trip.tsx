@@ -19,12 +19,12 @@ export function CompleteTrip({ bookingId }: { bookingId: string }) {
       <div className="flex justify-center gap-1" role="radiogroup" aria-label={tr.rate}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={tr.star(n)}
-            className={"text-4xl " + (n <= rating ? "text-amber" : "text-line")} onClick={() => setRating(n)}>★</button>
+            className={"text-4xl " + (n <= rating ? "text-[#c9973f]" : "text-line")} onClick={() => setRating(n)}>★</button>
         ))}
       </div>
       <textarea className={input} rows={2} placeholder={tr.commentPh} value={comment} onChange={(e) => setComment(e.target.value)} />
       <label className="flex items-start gap-3 text-sm text-muted">
-        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-navy" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-sage" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         {tr.reviewConsent}
       </label>
       <button className={`${btnPrimary} w-full`} disabled={busy} onClick={async () => {

@@ -12,27 +12,43 @@ const TABS = [
   { href: "/liff/driver/earnings", key: "earnings", label: "รายได้" },
 ] as const;
 
+// ดีไซน์ 2a · ใบชา: หัวเรื่องบนพื้นครีม · เมนูล่างเป็นแคปซูลลอย (แท็บที่อยู่เป็นพื้นเขียวเข้ม)
 export function DriverShell({
-  title, subtitle, active, children,
-}: { title: string; subtitle?: string; active: (typeof TABS)[number]["key"] | null; children: ReactNode }) {
+  title, subtitle, active, children, back, extra, bottom,
+}: {
+  title: string; subtitle?: string; active: (typeof TABS)[number]["key"] | null; children: ReactNode;
+  /** ลิงก์ย้อนกลับ (หน้าวันงาน) */ back?: string;
+  /** ป้ายข้างปุ่มออกจากระบบ เช่น "พร้อมรับงาน" */ extra?: ReactNode;
+  /** ปุ่มหลักลอยด้านล่าง (แทนเมนูล่าง) */ bottom?: ReactNode;
+}) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-      <AppHeader title={title} subtitle={subtitle} right={<LogoutButton to="/liff/driver" />} />
-      <main className="flex-1 space-y-4 px-5 pb-24 pt-4">{children}</main>
-      <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-card" aria-label="เมนูคนขับ">
-        <div className="mx-auto grid max-w-md grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+      <AppHeader
+        title={title}
+        subtitle={subtitle}
+        back={back}
+        right={<div className="flex flex-col items-end gap-2">{extra}<LogoutButton to="/liff/driver" /></div>}
+      />
+      <main className={"flex-1 space-y-3 px-4 pt-3 " + (bottom ? "pb-36" : "pb-28")}>{children}</main>
+      {bottom ? (
+        <div className="fixed inset-x-4 bottom-[max(1.125rem,env(safe-area-inset-bottom))] z-10 mx-auto max-w-[calc(28rem-2rem)]">{bottom}</div>
+      ) : (
+        <nav
+          className="fixed inset-x-4 bottom-[max(0.875rem,env(safe-area-inset-bottom))] z-10 mx-auto grid max-w-[calc(28rem-2rem)] grid-cols-4 rounded-[1.375rem] border border-line bg-card p-1.5 shadow-[0_6px_20px_rgba(40,30,10,.08)]"
+          aria-label="เมนูคนขับ"
+        >
           {TABS.map((t) => (
             <Link
               key={t.key}
               href={t.href}
               aria-current={active === t.key ? "page" : undefined}
-              className={"py-3.5 text-center text-sm " + (active === t.key ? "font-bold text-navy" : "text-muted")}
+              className={"rounded-2xl py-2.5 text-center text-[0.8125rem] " + (active === t.key ? "bg-forest font-semibold text-white" : "text-muted")}
             >
               {t.label}
             </Link>
           ))}
-        </div>
-      </nav>
+        </nav>
+      )}
     </div>
   );
 }

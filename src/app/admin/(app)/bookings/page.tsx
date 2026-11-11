@@ -5,7 +5,7 @@ import { formatBaht } from "@/lib/money";
 import { formatBangkok } from "@/lib/time";
 import { carLabel, SERVICE_TYPES } from "@/services/portal";
 import { BOOKING_STATUS_TH, PAYMENT_KIND_TH, SLIP_REASON_TH } from "@/services/bookingView";
-import { Badge, Empty, Panel } from "@/components/ui";
+import { Empty, StatusDot } from "@/components/ui";
 
 const FILTERS = [
   ["active", "กำลังดำเนินการ"], ["awaiting_deposit", "รอมัดจำ"], ["closed", "ปิดแล้ว"], ["all", "ทั้งหมด"],
@@ -42,72 +42,63 @@ export default async function BookingsPage({ searchParams }: PageProps<"/admin/b
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">การจอง / การเงิน</h1>
+      <h1 className="text-[1.75rem] font-bold">การจอง / การเงิน</h1>
 
-      {(pending.length > 0 || refunds.length > 0) && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title={`สลิปรอตรวจ (${pending.length})`}>
-            {pending.length === 0 ? <Empty>ไม่มี</Empty> : (
-              <ul className="divide-y divide-line text-sm">
-                {pending.map((p) => (
-                  <li key={p.id}>
-                    <Link href={`/admin/bookings/${p.booking_id}`} className="flex justify-between gap-2 py-2">
-                      <span>{p.customer} · {PAYMENT_KIND_TH[p.kind]} {formatBaht(p.amount_satang)}</span>
-                      <Badge tone="warn">{SLIP_REASON_TH[p.reason ?? ""] ?? p.reason}</Badge>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-          <Panel title={`ต้องโอนคืน (${refunds.length})`}>
-            {refunds.length === 0 ? <Empty>ไม่มี</Empty> : (
-              <ul className="divide-y divide-line text-sm">
-                {refunds.map((r) => (
-                  <li key={r.id}>
-                    <Link href={`/admin/bookings/${r.booking_id}`} className="flex justify-between gap-2 py-2">
-                      <span>{r.customer} · {r.reason}</span><b>{formatBaht(r.amount_satang)}</b>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+      {/* 2a: สลิปรอตรวจ / ต้องโอนคืน เป็นแถบเตือนสีทราย แต่ละรายการกดไปจัดการได้ทันที */}
+      {pending.map((p) => (
+        <div key={p.id} className="flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-2xl bg-[#f6ecd9] px-4 py-3 text-sm text-[#7a5718]">
+          <b>สลิปรอตรวจ</b>
+          <span>{p.customer} · {PAYMENT_KIND_TH[p.kind]} {formatBaht(p.amount_satang)} · {SLIP_REASON_TH[p.reason ?? ""] ?? p.reason}</span>
+          <Link href={`/admin/bookings/${p.booking_id}`} className="ml-auto rounded-xl bg-forest px-3.5 py-2 text-[0.8125rem] font-bold text-white">ตรวจสลิป</Link>
         </div>
-      )}
+      ))}
+      {refunds.map((r) => (
+        <div key={r.id} className="flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-2xl bg-[#f6ecd9] px-4 py-3 text-sm text-[#7a5718]">
+          <b>ต้องโอนคืน</b>
+          <span>{r.customer} · {r.reason} · {formatBaht(r.amount_satang)}</span>
+          <Link href={`/admin/bookings/${r.booking_id}`} className="ml-auto rounded-xl bg-forest px-3.5 py-2 text-[0.8125rem] font-bold text-white">โอนคืน</Link>
+        </div>
+      ))}
 
-      <nav className="flex flex-wrap gap-2 text-sm">
+      <nav aria-label="กรองการจอง" className="inline-flex flex-wrap gap-1 rounded-[0.875rem] bg-chip p-1 text-sm">
         {FILTERS.map(([k, l]) => (
-          <Link key={k} href={`/admin/bookings?f=${k}`}
-            className={"rounded-full px-3 py-1.5 " + (f === k ? "bg-navy text-white" : "border border-line bg-card")}>{l}</Link>
+          <Link key={k} href={`/admin/bookings?f=${k}`} aria-current={f === k ? "page" : undefined}
+            className={"rounded-[0.6875rem] px-3.5 py-2 " + (f === k ? "bg-card font-semibold shadow-[0_1px_3px_rgba(40,30,10,.1)]" : "text-muted")}>{l}</Link>
         ))}
       </nav>
-      <Panel>
-        {bookings.length === 0 ? <Empty>ไม่มีงาน</Empty> : (
+      <section className="overflow-hidden rounded-[1.25rem] border border-line bg-card">
+        {bookings.length === 0 ? <div className="p-4"><Empty>ไม่มีงาน</Empty></div> : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-muted">
+              <thead className="border-b border-[#eee8dc] text-xs text-muted">
                 <tr>
-                  <th className="py-2 pr-3 font-medium">วันเดินทาง</th>
-                  <th className="py-2 pr-3 font-medium">ลูกค้า</th>
-                  <th className="py-2 pr-3 font-medium">บริการ</th>
-                  <th className="py-2 pr-3 text-right font-medium">ราคา / ชำระแล้ว</th>
-                  <th className="py-2 font-medium">สถานะ</th>
+                  <th className="px-5 py-3 font-medium">วันเดินทาง</th>
+                  <th className="py-3 pr-3 font-medium">ลูกค้า</th>
+                  <th className="py-3 pr-3 font-medium">บริการ</th>
+                  <th className="py-3 pr-3 text-right font-medium">ราคา / ชำระแล้ว</th>
+                  <th className="py-3 pr-5 text-right font-medium">สถานะ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-[#f0ebe1]">
                 {bookings.map((b) => {
                   const st = BOOKING_STATUS_TH[b.status] ?? [b.status, "info"];
+                  const pct = b.price_satang > 0 ? Math.min(100, Math.round((b.paid / b.price_satang) * 100)) : 0;
                   return (
-                    <tr key={b.id}>
-                      <td className="py-2.5 pr-3">
-                        <Link href={`/admin/bookings/${b.id}`} className="font-medium text-navy hover:underline">{formatBangkok(b.pickup_at)}</Link>
-                        <div className="text-xs text-muted">{b.number}</div>
+                    <tr key={b.id} className="hover:bg-page">
+                      <td className="px-5 py-3.5">
+                        <Link href={`/admin/bookings/${b.id}`} className="font-semibold hover:underline">{formatBangkok(b.pickup_at)}</Link>
+                        <div className="font-mono text-[0.7rem] text-muted">{b.number}</div>
                       </td>
-                      <td className="py-2.5 pr-3">{b.customer}</td>
-                      <td className="py-2.5 pr-3">{SERVICE_TYPES.find((s) => s.value === b.service_type)?.label} · {carLabel(b.car_type)}</td>
-                      <td className="py-2.5 pr-3 text-right">{formatBaht(b.price_satang)}<div className="text-xs text-muted">{formatBaht(b.paid)}</div></td>
-                      <td className="py-2.5"><Badge tone={st[1]}>{st[0]}</Badge></td>
+                      <td className="py-3.5 pr-3">{b.customer}</td>
+                      <td className="py-3.5 pr-3 text-muted">{SERVICE_TYPES.find((s) => s.value === b.service_type)?.label} · {carLabel(b.car_type)}</td>
+                      <td className="py-3.5 pr-3 text-right">
+                        <div className="font-semibold">{formatBaht(b.price_satang)}</div>
+                        <div className="ml-auto mt-1 h-1 w-[90px] overflow-hidden rounded bg-chip" role="img" aria-label={`ชำระแล้ว ${formatBaht(b.paid)}`}>
+                          <div className="h-1 bg-sage" style={{ width: `${pct}%` }} />
+                        </div>
+                        <div className="mt-0.5 text-[0.7rem] text-muted">{formatBaht(b.paid)}</div>
+                      </td>
+                      <td className="py-3.5 pr-5 text-right"><StatusDot tone={st[1]}>{st[0]}</StatusDot></td>
                     </tr>
                   );
                 })}
@@ -115,7 +106,7 @@ export default async function BookingsPage({ searchParams }: PageProps<"/admin/b
             </table>
           </div>
         )}
-      </Panel>
+      </section>
     </div>
   );
 }

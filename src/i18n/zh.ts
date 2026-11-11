@@ -10,6 +10,7 @@ export const zh: Messages = {
     noLiff: "尚未设置客户端 LIFF ID",
     devLogin: "测试登录（本地）",
     logout: "退出登录",
+    back: "返回",
     print: "保存 PDF / 打印",
     cancel: "取消",
     failed: "操作失败",
@@ -267,6 +268,7 @@ export const zh: Messages = {
     submit: "确认并前往支付订金",
   },
   booking: {
+    steps: ["定金", "已确认", "已派司机", "行程中", "完成"],
     title: "我的预订",
     loginTitle: "预订",
     status: "状态",

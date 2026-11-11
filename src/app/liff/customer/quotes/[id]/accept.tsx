@@ -61,20 +61,20 @@ export function AcceptQuote({
       <input name="full_name" required minLength={2} defaultValue={defaults.full_name} placeholder={a.namePh} className={input} />
       <input name="phone" required inputMode="tel" defaultValue={defaults.phone} placeholder={a.phonePh} className={input} />
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-navy" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+        <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-sage" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
         <span>
-          {a.agree} <Link href="/liff/customer/terms" className="text-navy underline" target="_blank">{a.termsLink}</Link>{" "}
-          {a.and} <Link href="/liff/customer/terms#privacy" className="text-navy underline" target="_blank">{a.privacyLink}</Link>
+          {a.agree} <Link href="/liff/customer/terms" className="text-sage underline" target="_blank">{a.termsLink}</Link>{" "}
+          {a.and} <Link href="/liff/customer/terms#privacy" className="text-sage underline" target="_blank">{a.privacyLink}</Link>
         </span>
       </label>
       {driverOnly && (
         <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-navy" checked={liability} onChange={(e) => setLiability(e.target.checked)} />
+          <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-sage" checked={liability} onChange={(e) => setLiability(e.target.checked)} />
           <span>{a.liability}</span>
         </label>
       )}
       <label className="flex items-start gap-3 text-sm text-muted">
-        <input type="checkbox" name="marketing" className="mt-0.5 h-5 w-5 shrink-0 accent-navy" />
+        <input type="checkbox" name="marketing" className="mt-0.5 h-5 w-5 shrink-0 accent-sage" />
         <span>{a.marketing}</span>
       </label>
       {error && <p className="text-sm text-bad">{error}</p>}

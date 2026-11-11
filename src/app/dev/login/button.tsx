@@ -8,7 +8,7 @@ export function DevLoginButton({ userId, next, children }: { userId: string; nex
   return (
     <button
       type="button"
-      className="flex w-full items-center justify-between rounded-xl border border-line px-4 py-3 text-left hover:border-navy"
+      className="flex w-full items-center justify-between rounded-xl border border-line px-4 py-3 text-left hover:border-sage"
       onClick={async () => {
         const res = await fetch("/api/auth/dev", {
           method: "POST",

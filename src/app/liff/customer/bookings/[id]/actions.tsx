@@ -5,7 +5,7 @@ import { useState } from "react";
 import { apiErrorText } from "@/i18n";
 import { formatBaht } from "@/lib/money";
 import { useI18n } from "@/components/I18nProvider";
-import { btnPrimary, btnSecondary, input } from "@/components/ui";
+import { btnPrimary, btnSage, btnSecondary, input } from "@/components/ui";
 
 // adapter ข: ส่งรูปสลิป · local มีปุ่มจำลองสลิปที่ถูกต้อง (ไม่มีผู้ให้บริการตรวจสลิป)
 export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: string; dev: boolean; amount: number; receiver: string }) {
@@ -41,7 +41,7 @@ export function SlipUpload({ paymentId, dev, amount, receiver }: { paymentId: st
           <span className="text-sm font-medium">{sl.label}</span>
           <input name="file" type="file" accept="image/jpeg,image/png,image/webp" className="block w-full text-sm" />
         </label>
-        <button className={`${btnPrimary} w-full`} disabled={busy}>{busy ? sl.checking : sl.send}</button>
+        <button className={`${btnSage} w-full py-3.5 text-base shadow-none`} disabled={busy}>{busy ? sl.checking : sl.send}</button>
       </form>
       {dev && (
         <button

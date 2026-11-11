@@ -59,7 +59,7 @@ export function CookieConsent({ pixelId }: { pixelId?: string }) {
       <div className="mx-auto max-w-md space-y-3 text-sm">
         <p>
           {t.cookie.text}{" "}
-          <Link href="/privacy" className="text-navy underline">{t.cookie.more}</Link>
+          <Link href="/privacy" className="text-sage underline">{t.cookie.more}</Link>
         </p>
         <div className="flex gap-2">
           <button className="flex-1 rounded-[var(--radius-btn)] border border-line px-4 py-2.5 font-medium" onClick={() => decide(false)}>{t.cookie.necessary}</button>

@@ -45,3 +45,5 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 .claude
+# ไฟล์ชั่วคราวของระบบไฟล์ (FUSE)
+.fuse_hidden*

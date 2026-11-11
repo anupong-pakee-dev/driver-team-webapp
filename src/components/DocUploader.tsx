@@ -26,7 +26,7 @@ export function DocUploader({
 
   if (!open) {
     return (
-      <button type="button" className={subtle ? "text-sm text-navy underline underline-offset-2" : btnSecondary} onClick={() => setOpen(true)}>
+      <button type="button" className={subtle ? "text-sm text-sage underline underline-offset-2" : btnSecondary} onClick={() => setOpen(true)}>
         {label}
       </button>
     );

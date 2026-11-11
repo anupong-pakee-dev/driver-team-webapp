@@ -13,7 +13,7 @@ export function AcceptTerms() {
   return (
     <div className="space-y-3">
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" className="mt-1 h-5 w-5 accent-navy" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+        <input type="checkbox" className="mt-1 h-5 w-5 accent-sage" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
         ฉันอ่านและยอมรับสัญญาผู้รับจ้างอิสระ และประกาศความเป็นส่วนตัวข้างต้น
       </label>
       {error && <p className="text-sm text-bad">{error}</p>}

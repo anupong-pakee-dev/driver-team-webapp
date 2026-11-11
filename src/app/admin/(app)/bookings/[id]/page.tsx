@@ -46,7 +46,7 @@ export default async function AdminBooking({ params }: PageProps<"/admin/booking
             <dt className="text-muted">ผู้โดยสาร</dt><dd>{b.pax} คน · {b.luggage} กระเป๋า</dd>
             {b.notes && <><dt className="text-muted">หมายเหตุ</dt><dd>{b.notes}</dd></>}
             <dt className="text-muted">ใบเสนอราคา</dt>
-            <dd><Link href={`/admin/quotes/${b.quote_id}`} className="text-navy underline">{b.quote_number} rev.{b.revision}</Link></dd>
+            <dd><Link href={`/admin/quotes/${b.quote_id}`} className="text-sage underline">{b.quote_number} rev.{b.revision}</Link></dd>
             <dt className="text-muted">ราคา</dt><dd className="font-bold">{formatBaht(b.price_satang)}</dd>
             <dt className="text-muted">มัดจำ</dt><dd>{formatBaht(b.deposit_satang)}</dd>
             <dt className="text-muted">ชำระแล้ว</dt><dd>{formatBaht(b.paid_satang)} · คงเหลือ {formatBaht(b.due_satang)} ({b.balance_due === "before_start" ? "ก่อนเริ่มงาน" : "หลังจบงาน"})</dd>
@@ -78,8 +78,8 @@ export default async function AdminBooking({ params }: PageProps<"/admin/booking
                   ) : null}
                   {p.requested_by_name && p.status === "pending_approval" && <div className="text-xs text-muted">ขออนุมัติโดย {p.requested_by_name}</div>}
                   <div className="flex flex-wrap gap-3">
-                    {p.slip_file_path && <a className="text-navy underline" target="_blank" rel="noreferrer" href={`/api/admin/files?payment=${p.id}&kind=slip`}>ดูสลิป ↗</a>}
-                    {p.proof_file_path && <a className="text-navy underline" target="_blank" rel="noreferrer" href={`/api/admin/files?payment=${p.id}&kind=proof`}>หลักฐานโอนคืน ↗</a>}
+                    {p.slip_file_path && <a className="text-sage underline" target="_blank" rel="noreferrer" href={`/api/admin/files?payment=${p.id}&kind=slip`}>ดูสลิป ↗</a>}
+                    {p.proof_file_path && <a className="text-sage underline" target="_blank" rel="noreferrer" href={`/api/admin/files?payment=${p.id}&kind=proof`}>หลักฐานโอนคืน ↗</a>}
                   </div>
                   {["pending", "pending_approval"].includes(p.status) && p.kind !== "refund" && (
                     <PaymentDecision paymentId={p.id} isOwner={isOwner} />

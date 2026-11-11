@@ -73,7 +73,7 @@ export function LocationInput({
       <legend className="text-sm font-medium">{label}{required && <span className="text-bad"> *</span>}</legend>
 
       {value ? (
-        <div className="space-y-2 rounded-xl border-2 border-navy bg-card p-3">
+        <div className="space-y-2 rounded-xl border-2 border-sage bg-card p-3">
           <div className="flex items-start justify-between gap-2 text-sm">
             <span>
               <span className="block font-medium text-ok">{L.got}</span>
@@ -84,7 +84,7 @@ export function LocationInput({
               </span>
             </span>
             <span className="flex shrink-0 gap-3">
-              <button type="button" className="text-navy underline" onClick={() => setMapOpen(true)}>{L.adjust}</button>
+              <button type="button" className="text-sage underline" onClick={() => setMapOpen(true)}>{L.adjust}</button>
               <button type="button" className="text-muted underline" onClick={() => onChange(null)}>{L.clear}</button>
             </span>
           </div>
