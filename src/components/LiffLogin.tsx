@@ -24,6 +24,8 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
           liff.login({ redirectUri: window.location.href });
           return;
         }
+        // ลิงก์ liff.line.me/<id>/join?... มาถึงหน้าหลักพร้อม liff.state → liff.init กำลังพาไปหน้านั้น อย่า login ซ้ำที่นี่
+        if (new URLSearchParams(window.location.search).has("liff.state")) return;
         const idToken = liff.getIDToken();
         if (!idToken) throw new Error("no id token");
         const res = await fetch("/api/auth/liff", {
@@ -50,7 +52,11 @@ export function LiffLogin({ app, liffId, devLogin }: { app: "customer" | "driver
       <div className="py-10 text-center text-muted">
         {error ? (
           <p className="text-bad">
-            {t.common.loginFailed(error === "DRIVER_NOT_INVITED" ? "บัญชี LINE นี้ยังไม่ได้รับเชิญเป็นคนขับ" : error)}
+            {t.common.loginFailed(
+              error === "DRIVER_NOT_INVITED" || error === "NOT_A_DRIVER"
+                ? "บัญชี LINE นี้ยังไม่ได้ลงทะเบียนเป็นคนขับ — เปิดลิงก์เชิญที่ได้รับจากเจ้าของก่อน"
+                : error,
+            )}
           </p>
         ) : (
           t.common.signingIn

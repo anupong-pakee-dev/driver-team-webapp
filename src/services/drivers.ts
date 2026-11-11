@@ -65,8 +65,20 @@ export async function redeemInvite(db: Db, token: string, id: LineIdentity): Pro
   if (inv.used_at) throw new BizError("FORBIDDEN", { reason: "INVITE_USED" });
   if (new Date(inv.expires_at) <= new Date()) throw new BizError("FORBIDDEN", { reason: "INVITE_EXPIRED" });
 
-  const taken = await db.query(`select id from users where line_user_id = $1`, [id.lineUserId]);
-  if (taken.rows[0] && taken.rows[0].id !== inv.user_id) throw new BizError("FORBIDDEN", { reason: "LINE_ALREADY_USED" });
+  const taken = await db.query(
+    `select u.id, u.role,
+            exists (select 1 from quotes q where q.customer_id = u.id)
+              or exists (select 1 from bookings b where b.customer_id = u.id) as has_activity
+       from users u where u.line_user_id = $1 for update`,
+    [id.lineUserId],
+  );
+  const other = taken.rows[0];
+  if (other && other.id !== inv.user_id) {
+    // คนขับมักแอดเพื่อน OA ก่อนเปิดลิงก์เชิญ → webhook สร้างบัญชีลูกค้าเปล่าไว้แล้ว
+    // ถ้าบัญชีนั้นยังไม่เคยขอราคา/จองเลย ให้ปลด LINE ออกมาผูกกับคนขับแทน
+    if (other.role !== "customer" || other.has_activity) throw new BizError("FORBIDDEN", { reason: "LINE_ALREADY_USED" });
+    await db.query(`update users set line_user_id = null where id = $1`, [other.id]);
+  }
 
   await db.query(`update users set line_user_id = $2 where id = $1`, [inv.user_id, id.lineUserId]);
   await db.query(`update driver_invites set used_at = now() where id = $1`, [inv.id]);

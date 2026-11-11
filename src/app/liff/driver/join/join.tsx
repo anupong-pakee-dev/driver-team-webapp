@@ -8,7 +8,7 @@ const REASONS: Record<string, string> = {
   INVITE_INVALID: "ลิงก์เชิญไม่ถูกต้อง",
   INVITE_USED: "ลิงก์นี้ถูกใช้ไปแล้ว",
   INVITE_EXPIRED: "ลิงก์หมดอายุ — ขอลิงก์ใหม่จากเจ้าของ",
-  LINE_ALREADY_USED: "บัญชี LINE นี้ผูกกับผู้ใช้อื่นแล้ว",
+  LINE_ALREADY_USED: "บัญชี LINE นี้เคยใช้จองรถในฐานะลูกค้าแล้ว — ใช้ LINE อีกบัญชี หรือติดต่อเจ้าของ",
 };
 
 export function JoinWithInvite({ token, liffId, dev, devLineId }: { token: string; liffId?: string; dev: boolean; devLineId: string }) {
