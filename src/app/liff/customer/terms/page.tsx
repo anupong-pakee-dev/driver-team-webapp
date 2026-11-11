@@ -6,7 +6,7 @@ import { AppHeader, Panel } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-// FR-BOOK-03 / BR-CANCEL-02 · ❓ เนื้อหาร่าง รอทนายตรวจ — ตารางยกเลิกดึงจาก settings (ตรงกับที่ระบบคำนวณจริง)
+// FR-BOOK-03 / BR-CANCEL-02 · ฉบับใช้งาน 2026-11 (เจ้าของอนุมัติโดยไม่ผ่านทนาย) — ตารางยกเลิกดึงจาก settings (ตรงกับที่ระบบคำนวณจริง)
 // ภาษาอังกฤษ/จีนเป็นคำแปล — ฉบับภาษาไทยมีผลบังคับ
 export default async function CustomerTerms() {
   const { t } = await getI18n();
@@ -21,7 +21,7 @@ export default async function CustomerTerms() {
     <div className="mx-auto w-full max-w-md lg:max-w-3xl lg:py-6">
       <AppHeader title={l.termsTitle} subtitle={l.version(terms?.terms_version ?? "")} right={<LanguageSwitcher />} />
       <main className="space-y-4 px-5 py-4 pb-10 text-sm">
-        <div className="rounded-lg bg-warn/10 px-3 py-2 text-xs text-warn">{l.draft}</div>
+        {l.draft && <div className="rounded-lg bg-warn/10 px-3 py-2 text-xs text-warn">{l.draft}</div>}
         {l.officialNote && <p className="text-xs text-muted">{l.officialNote}</p>}
         <Panel title={l.payTitle}>
           <ul className="list-disc space-y-1.5 pl-5">
@@ -42,6 +42,11 @@ export default async function CustomerTerms() {
             </tbody>
           </table>
           <p className="mt-2 text-xs text-muted">{l.balanceNote}</p>
+        </Panel>
+        <Panel title={l.generalTitle}>
+          <ul className="list-disc space-y-1.5 pl-5">
+            {l.general.map((x) => <li key={x}>{x}</li>)}
+          </ul>
         </Panel>
         <Panel title={l.privacyTitle(terms?.privacy_version ?? "")}>
           <div id="privacy" />
