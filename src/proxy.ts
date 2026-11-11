@@ -31,7 +31,7 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && !req.cookies.has("sid")) {
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login" && pathname !== "/admin/join" && !req.cookies.has("sid")) {
     return NextResponse.redirect(new URL("/admin/login", req.url));
   }
 
