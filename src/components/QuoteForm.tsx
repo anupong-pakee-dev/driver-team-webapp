@@ -7,7 +7,7 @@ import { apiErrorText } from "@/i18n";
 import { formatBaht } from "@/lib/money";
 import { useI18n } from "./I18nProvider";
 import { LocationInput, type PickedPlace } from "./LocationInput";
-import { btnPrimary, btnSecondary, floatBar, input, segItem, segWrap } from "./ui";
+import { btnPrimary, btnSecondary, floatBar, floatBarDesk, input, segItem, segWrap } from "./ui";
 
 const SOURCES = ["facebook", "google", "tiktok", "line", "friend", "repeat", "other"] as const;
 
@@ -294,7 +294,7 @@ export function QuoteForm({
       )}
 
       {mode === "customer" ? (
-        <div className={floatBar}>
+        <div className={floatBar + floatBarDesk}>
           <div className="min-w-0">
             <div className="truncate text-xs text-on-dark">{carInfo?.label ?? svc.label} · {svc.label}</div>
             <div className="text-xl font-bold">{carInfo ? `${f.from} ${formatBaht(carInfo.from_satang)}` : "—"}</div>

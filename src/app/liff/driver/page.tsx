@@ -50,6 +50,7 @@ export default async function DriverHome() {
       title={user.displayName ?? "คนขับ"}
       subtitle="งานของฉัน"
       active="home"
+      columns={2}
       extra={ready && (
         <span className="flex items-center gap-1.5 rounded-full bg-sage-soft py-1.5 pl-2 pr-3 text-[0.8125rem] font-semibold text-sage">
           <span className="h-2 w-2 rounded-full bg-sage" aria-hidden="true" />พร้อมรับงาน
@@ -102,7 +103,7 @@ export default async function DriverHome() {
         </Panel>
       )}
 
-      <section aria-labelledby="jobs-h" className="pt-2">
+      <section aria-labelledby="jobs-h" className="pt-2 lg:col-start-2 lg:row-span-6 lg:row-start-1 lg:pt-0">
         <div className="flex items-baseline justify-between px-1">
           <h2 id="jobs-h" className="text-base font-bold">งานที่รับแล้ว</h2>
           <span className="text-[0.8125rem] text-muted">คะแนน {status.driver?.score ?? "—"}</span>

@@ -26,7 +26,7 @@ export default async function DriverCalendar() {
   }));
 
   return (
-    <DriverShell title="ปฏิทิน" subtitle="ปิดช่วงที่ไม่สะดวกรับงาน" active="calendar">
+    <DriverShell title="ปฏิทิน" subtitle="ปิดช่วงที่ไม่สะดวกรับงาน" active="calendar" columns={2}>
       <Panel title="ปิดรับงานช่วงเวลา">
         <AddBlock />
       </Panel>

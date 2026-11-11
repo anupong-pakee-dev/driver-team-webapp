@@ -18,7 +18,7 @@ export default async function CustomerTerms() {
   const policy = p!;
   const mid = policy.mid_hours ?? 24;
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:max-w-3xl lg:py-6">
       <AppHeader title={l.termsTitle} subtitle={l.version(terms?.terms_version ?? "")} right={<LanguageSwitcher />} />
       <main className="space-y-4 px-5 py-4 pb-10 text-sm">
         <div className="rounded-lg bg-warn/10 px-3 py-2 text-xs text-warn">{l.draft}</div>

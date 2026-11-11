@@ -21,7 +21,7 @@ export default async function DriverDocuments() {
   ]);
 
   return (
-    <DriverShell title="เอกสารและรถ" subtitle="ส่งให้เจ้าของตรวจก่อนรับงาน" active="documents">
+    <DriverShell title="เอกสารและรถ" subtitle="ส่งให้เจ้าของตรวจก่อนรับงาน" active="documents" columns={2}>
       <Panel title="เอกสารคนขับ">
         <DocSlotList ownerType="driver" ownerId={user.id} slots={data.slots} options={options} />
       </Panel>

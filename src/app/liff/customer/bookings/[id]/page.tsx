@@ -32,7 +32,7 @@ export default async function CustomerBooking({ params }: PageProps<"/liff/custo
   const user = await currentUser();
   if (!user) {
     return (
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md lg:my-16 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:pb-6 lg:shadow-[0_12px_40px_rgba(0,0,0,.06)]">
         <AppHeader title={k.loginTitle} subtitle={t.common.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5"><LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} /></main>
       </div>
@@ -60,18 +60,19 @@ export default async function CustomerBooking({ params }: PageProps<"/liff/custo
   const complainOpen = ["dropped_off", "completed"].includes(b.status) && trip?.complain_window;
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:max-w-5xl lg:py-6">
       <AppHeader title={k.title} subtitle={b.quote_number} right={<LanguageSwitcher />} back="/liff/customer" backLabel={t.common.back} />
-      <main className="space-y-3 px-5 py-4 pb-10">
-        <section aria-label={k.status}>
+      {/* จอคอม (lg): ซ้ายรายละเอียดงาน · ขวาการ์ดชำระเงินติดอยู่ขณะเลื่อน */}
+      <main className="space-y-3 px-5 py-4 pb-10 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-6 lg:[&>*]:col-start-1">
+        <section aria-label={k.status} className="lg:col-span-2 lg:pb-2">
           <div className={`flex items-center gap-2 text-sm font-semibold ${DOT[tone].split(" ")[1]}`}>
             <span className={`h-2 w-2 rounded-full ${DOT[tone].split(" ")[0]}`} aria-hidden="true" />
             {t.bookingStatus[b.status] ?? b.status}
           </div>
-          <p className="mt-1 text-[1.625rem] font-bold leading-tight">{when(b.pickup_at)}</p>
+          <p className="mt-1 text-[1.625rem] font-bold leading-tight lg:text-[2.25rem]">{when(b.pickup_at)}</p>
           <p className="text-sm text-muted">{service} · {carName(b.car_type)}{b.flight_no ? ` · ${b.flight_no}` : ""}</p>
           {STEP_OF[b.status] !== undefined && (
-            <ol className="mt-3.5 grid grid-cols-5 gap-1 text-[0.65rem] text-muted">
+            <ol className="mt-3.5 grid grid-cols-5 gap-1 text-[0.65rem] text-muted lg:max-w-2xl lg:text-xs">
               {k.steps.map((s, i) => {
                 const cur = i === STEP_OF[b.status];
                 const done = i <= STEP_OF[b.status];
@@ -129,7 +130,7 @@ export default async function CustomerBooking({ params }: PageProps<"/liff/custo
         )}
 
         {open && (
-          <Panel className="border-2 border-sage" title={k.payTitle(t.paymentKind[open.kind] ?? open.kind, formatBaht(open.amount_satang))}>
+          <Panel className="border-2 border-sage lg:sticky lg:top-6 lg:col-start-2! lg:row-span-12 lg:row-start-2 lg:mt-0!" title={k.payTitle(t.paymentKind[open.kind] ?? open.kind, formatBaht(open.amount_satang))}>
             {open.status === "pending_approval" ? (
               <div className="rounded-xl bg-warn/10 px-4 py-3 text-sm text-warn">
                 {k.slipReceived(t.slipReason[open.reason ?? ""] ?? k.waitStaff)}

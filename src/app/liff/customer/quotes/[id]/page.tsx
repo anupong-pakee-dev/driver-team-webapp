@@ -24,7 +24,7 @@ export default async function CustomerQuote({ params }: PageProps<"/liff/custome
   const user = await currentUser();
   if (!user) {
     return (
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md lg:my-16 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:pb-6 lg:shadow-[0_12px_40px_rgba(0,0,0,.06)]">
         <AppHeader title={t.quote.title} subtitle={t.common.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5">
           <LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} />
@@ -48,16 +48,17 @@ export default async function CustomerQuote({ params }: PageProps<"/liff/custome
   };
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="print:hidden"><AppHeader title={t.quote.title} subtitle={t.quote.subtitle} right={<LanguageSwitcher />} /></div>
-      <main className="space-y-4 px-5 py-4 pb-10">
+    <div className="mx-auto w-full max-w-md lg:max-w-5xl lg:py-6">
+      <div className="print:hidden"><AppHeader title={t.quote.title} subtitle={t.quote.subtitle} right={<LanguageSwitcher />} back="/liff/customer" backLabel={t.common.back} /></div>
+      {/* จอคอม (lg): ใบเสนอราคาด้านซ้าย · ปุ่มยืนยัน/พิมพ์ด้านขวาติดอยู่ขณะเลื่อน */}
+      <main className="space-y-4 px-5 py-4 pb-10 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-x-6 lg:space-y-0 print:block">
         {q.status === "superseded" && q.latest_id !== q.id && (
-          <Link href={`/liff/customer/quotes/${q.latest_id}`} className="block rounded-xl bg-warn/10 px-4 py-3 text-sm text-warn print:hidden">
+          <Link href={`/liff/customer/quotes/${q.latest_id}`} className="block rounded-xl bg-warn/10 px-4 py-3 text-sm text-warn lg:col-span-2 lg:mb-4 print:hidden">
             {t.quote.newer}
           </Link>
         )}
         <QuoteView q={q} brand={brand} locale={locale} />
-        <div className="space-y-2 print:hidden">
+        <div className="space-y-2 lg:sticky lg:top-6 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:p-4 print:hidden">
           {booking ? (
             <Link href={`/liff/customer/bookings/${booking}`} className={`${btnPrimary} w-full`}>{t.quote.goBooking}</Link>
           ) : active ? (

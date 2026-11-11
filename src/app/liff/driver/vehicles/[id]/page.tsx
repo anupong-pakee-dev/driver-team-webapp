@@ -26,7 +26,7 @@ export default async function VehiclePage({ params }: PageProps<"/liff/driver/ve
   const { v, slots } = data;
 
   return (
-    <DriverShell title={v.plate} subtitle={carLabel(v.car_type)} active="documents">
+    <DriverShell title={v.plate} subtitle={carLabel(v.car_type)} active="documents" columns={2} back="/liff/driver/documents">
       <Panel title="ข้อมูลรถ">
         {v.kyc_status === "approved" ? (
           <p className="text-sm text-muted">

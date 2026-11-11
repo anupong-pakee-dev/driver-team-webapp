@@ -22,7 +22,7 @@ export default async function DriverEarnings() {
   )).rows);
 
   return (
-    <DriverShell title="รายได้" active="earnings">
+    <DriverShell title="รายได้" active="earnings" columns={2}>
       {payouts.length === 0 ? (
         <Panel><Empty>ยังไม่มีรายได้ — จะแสดงหลังจบงานแรก</Empty></Panel>
       ) : (

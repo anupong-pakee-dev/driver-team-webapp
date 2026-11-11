@@ -69,6 +69,9 @@ export const segItem = (on: boolean) =>
 export const floatBar =
   "fixed inset-x-3 bottom-[max(0.875rem,env(safe-area-inset-bottom))] z-10 mx-auto flex max-w-[calc(28rem-1.5rem)] items-center justify-between gap-3 rounded-3xl bg-forest py-2.5 pl-5 pr-2.5 text-white shadow-[0_10px_30px_rgba(31,43,38,.25)]";
 
+/** จอคอม (lg ขึ้นไป): แถบลอยกลายเป็นการ์ดในเนื้อหา ไม่บังรายการ */
+export const floatBarDesk = " lg:static lg:inset-auto lg:mx-0 lg:mt-4 lg:max-w-none";
+
 /** ปุ่มหลักบนพื้นสว่าง = เขียวเข้ม · ปุ่มทราย (btnSand) ใช้บนพื้นมืดเท่านั้น */
 export const btnPrimary =
   "inline-flex items-center justify-center gap-2 rounded-[var(--radius-btn)] bg-forest px-5 py-3 font-bold text-white shadow-sm disabled:opacity-50";

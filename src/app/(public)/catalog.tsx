@@ -7,9 +7,10 @@ import { formatBaht } from "@/lib/money";
 import { Card, Close, Menu, Pin, Receipt, ShieldCheck } from "@/components/icons";
 import { useI18n } from "@/components/I18nProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { floatBar, segItem, segWrap } from "@/components/ui";
+import { floatBar, floatBarDesk, segItem, segWrap } from "@/components/ui";
 
 // ดีไซน์ 1a · ใบชา — รถที่เลือกเป็นการ์ดใหญ่ · คันอื่นเป็นแถวกะทัดรัด · แถบราคาลอยด้านล่าง
+// จอคอม (lg): 2 คอลัมน์ — ซ้ายพาดหัว + จุดเด่น · ขวาเลือกบริการ/รถ + การ์ดราคา (ไม่ลอย)
 const PHOTO_BIG = "bg-[repeating-linear-gradient(135deg,#e9efe9_0_10px,#e1e9e3_10px_20px)]";
 const PHOTO_SMALL = "bg-[repeating-linear-gradient(135deg,#efebe2_0_6px,#e8e3d8_6px_12px)]";
 
@@ -27,8 +28,8 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
     : "/liff/customer/quote";
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-page">
-      <header className="flex items-center justify-between px-5 pt-[1.125rem]">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col bg-page lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_28rem] lg:content-start lg:gap-x-16 lg:px-10 lg:pb-12">
+      <header className="flex items-center justify-between px-5 pt-[1.125rem] lg:col-span-2 lg:px-0 lg:pt-6">
         <span className="text-[1.0625rem] font-bold tracking-tight">{brandName}</span>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
@@ -43,19 +44,27 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
         </div>
       </header>
 
-      <section className="px-5 pt-5">
-        <h1 className="text-[1.875rem] font-bold leading-[1.3] tracking-tight">
+      <section className="px-5 pt-5 lg:col-start-1 lg:row-start-2 lg:px-0 lg:pt-20">
+        <h1 className="text-[1.875rem] font-bold leading-[1.3] tracking-tight lg:text-[3.25rem] lg:leading-[1.2]">
           {c.headline1}
           <br />
           <span className="text-sage">{c.headline2}</span>
         </h1>
-        <p className="mt-3 flex items-center gap-1.5 text-[0.8125rem] text-muted">
-          <ShieldCheck className="h-4 w-4 shrink-0 text-sage" />
+        <p className="mt-3 flex items-center gap-1.5 text-[0.8125rem] text-muted lg:mt-5 lg:text-base">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-sage lg:h-5 lg:w-5" />
           {c.trust}
         </p>
+        <ul className="mt-10 hidden max-w-md grid-cols-3 gap-3 text-sm text-muted lg:grid">
+          {[{ I: Card, label: c.pay }, { I: Pin, label: c.track }, { I: Receipt, label: c.receipt }].map(({ I, label }) => (
+            <li key={label} className="flex flex-col gap-2 rounded-[1.125rem] border border-line bg-card p-4">
+              <I className="h-6 w-6 text-sage" />
+              {label}
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <main className="flex-1 px-5 pb-32 pt-5">
+      <main className="flex-1 px-5 pb-32 pt-5 lg:col-start-2 lg:row-start-2 lg:px-0 lg:pb-0 lg:pt-20">
         <div role="tablist" aria-label={c.services} className={`${segWrap} grid-cols-3 rounded-full`}>
           {tabs.map((t, i) => (
             <button
@@ -132,7 +141,7 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
           })}
         </ul>
 
-        <ul className="mt-6 grid grid-cols-3 text-center text-[0.8125rem] text-muted">
+        <ul className="mt-6 grid grid-cols-3 text-center text-[0.8125rem] text-muted lg:hidden">
           <li className="flex flex-col items-center gap-1.5">
             <Card className="h-6 w-6 text-sage" />
             {c.pay}
@@ -148,7 +157,7 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
         </ul>
       </main>
 
-      <div className={floatBar}>
+      <div className={floatBar + floatBarDesk + " lg:col-start-2 lg:row-start-3"}>
         <div className="min-w-0">
           <div className="truncate text-xs text-on-dark">{item ? `${item.name} · ${tab.label}` : c.selected("—")}</div>
           <div className="text-xl font-bold">

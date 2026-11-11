@@ -26,7 +26,8 @@
 
   /* ภาษาจีน: IBM Plex Sans Thai ไม่มีอักษรจีน → ใช้ฟอนต์ระบบ (iOS/macOS, Android, Windows) */
   --font-sans: var(--font-thai), "PingFang SC", "Noto Sans SC", "Noto Sans CJK SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* IBM Plex Mono ไม่มีอักษรไทย → ตัวไทยในข้อความ mono ใช้ IBM Plex Sans Thai (ไม่ตกไปฟอนต์ระบบของ Windows) */
+  --font-mono: var(--font-plexmono), var(--font-thai), ui-monospace, SFMono-Regular, Consolas, monospace;
 
   --radius-card: 1.375rem;
   --radius-btn: 1rem;
@@ -34,6 +35,12 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+}
+
+/* Windows แสดงแถบเลื่อนหนาตลอด → ทำให้บางและสีเข้ากับพื้นครีม (Chrome/Edge 121+, Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d6cfbf transparent;
 }
 
 body {

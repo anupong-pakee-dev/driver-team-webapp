@@ -13,7 +13,7 @@ export default async function DevLogin({ searchParams }: PageProps<"/dev/login">
     `select id, role, display_name from users where role in ('customer','driver') and status = 'active' order by role, display_name`,
   );
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:my-16 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:pb-6 lg:shadow-[0_12px_40px_rgba(0,0,0,.06)]">
       <AppHeader title="เข้าสู่ระบบแบบทดสอบ" subtitle="ใช้แทน LINE Login บนเครื่อง local เท่านั้น" />
       <main className="px-5 py-4">
         <Panel>

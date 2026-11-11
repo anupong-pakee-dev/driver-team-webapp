@@ -9,7 +9,7 @@ export default async function NewVehicle() {
   const { user, notDriver } = await driverPage();
   if (!user) return <DriverLoginScreen notDriver={notDriver} />;
   return (
-    <DriverShell title="เพิ่มรถ" active="documents">
+    <DriverShell title="เพิ่มรถ" active="documents" back="/liff/driver/documents">
       <Panel>
         <VehicleForm />
       </Panel>

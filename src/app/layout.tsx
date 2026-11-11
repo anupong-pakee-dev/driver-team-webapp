@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Thai } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans_Thai } from "next/font/google";
 import { HTML_LANG, messages } from "@/i18n";
 import { getLocale } from "@/lib/locale";
 import "./globals.css";
@@ -8,6 +8,13 @@ const thai = IBM_Plex_Sans_Thai({
   variable: "--font-thai",
   subsets: ["thai", "latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+// ตัวเลข/รหัส (เลขที่การจอง เวลา หัวข้อเมนูหลังบ้าน) — โหลดเองให้เหมือนกันทุกเครื่อง (Windows ไม่มีฟอนต์นี้)
+const mono = IBM_Plex_Mono({
+  variable: "--font-plexmono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,7 +36,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   // lang ตามภาษาฝั่งลูกค้า (ให้เบราว์เซอร์เลือกฟอนต์/ตัวอ่านหน้าจอถูก) · หลังบ้าน/คนขับเป็นไทยเสมอแต่ไม่กระทบการแสดงผล
   const locale = await getLocale();
   return (
-    <html lang={HTML_LANG[locale]} className={`${thai.variable} h-full antialiased`}>
+    <html lang={HTML_LANG[locale]} className={`${thai.variable} ${mono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>
   );

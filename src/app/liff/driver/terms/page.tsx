@@ -16,7 +16,7 @@ export default async function DriverTerms() {
   if (accepted) redirect("/liff/driver");
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:max-w-3xl lg:py-6">
       <AppHeader title="ข้อตกลงคนขับ" subtitle="อ่านและยอมรับก่อนเริ่มใช้งาน" />
       <main className="space-y-4 px-5 py-4 pb-10">
         <Panel title={`สัญญาผู้รับจ้างอิสระ (ฉบับ ${terms?.contract_version})`}>

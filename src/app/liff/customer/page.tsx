@@ -21,7 +21,7 @@ export default async function CustomerHome() {
   const user = await currentUser();
   if (!user) {
     return (
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md lg:my-16 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:pb-6 lg:shadow-[0_12px_40px_rgba(0,0,0,.06)]">
         <AppHeader title={h.title} subtitle={t.common.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5">
           <LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} />
@@ -40,14 +40,14 @@ export default async function CustomerHome() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:max-w-4xl lg:py-6">
       <AppHeader
         title={h.hello(user.displayName ?? "")}
         subtitle={user.role === "customer" ? h.customerAccount : h.otherAccount(user.role)}
         right={<div className="flex flex-col items-end gap-2"><LanguageSwitcher /><LogoutButton to="/liff/customer" /></div>}
       />
-      <main className="space-y-4 px-5 py-4">
-        <Link href="/liff/customer/quote" className={`${btnPrimary} w-full`}>
+      <main className="space-y-4 px-5 py-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+        <Link href="/liff/customer/quote" className={`${btnPrimary} w-full lg:col-span-2 lg:w-auto lg:justify-self-start`}>
           {h.requestQuote}
         </Link>
 

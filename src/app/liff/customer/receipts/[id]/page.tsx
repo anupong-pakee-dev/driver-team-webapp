@@ -18,7 +18,7 @@ export default async function CustomerReceipt({ params }: PageProps<"/liff/custo
   const user = await currentUser();
   if (!user) {
     return (
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-md lg:my-16 lg:rounded-[var(--radius-card)] lg:border lg:border-line lg:bg-card lg:pb-6 lg:shadow-[0_12px_40px_rgba(0,0,0,.06)]">
         <AppHeader title={t.receipt.loginTitle} subtitle={t.common.loginSubtitle} right={<LanguageSwitcher />} />
         <main className="px-5"><LiffLogin app="customer" liffId={process.env.NEXT_PUBLIC_LIFF_ID_CUSTOMER} devLogin={devLoginEnabled()} /></main>
       </div>
@@ -28,7 +28,7 @@ export default async function CustomerReceipt({ params }: PageProps<"/liff/custo
   if (!r) notFound();
   const company = (await getSetting<{ name_th: string; tax_id: string; address_th: string }>("company"))!;
   return (
-    <div className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md lg:max-w-2xl lg:py-6">
       <div className="print:hidden"><AppHeader title={t.receipt.title} right={<LanguageSwitcher />} /></div>
       <main className="space-y-4 px-5 py-4">
         <ReceiptView r={r} company={company} locale={locale} />
