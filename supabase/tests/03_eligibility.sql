@@ -1,6 +1,6 @@
 -- §7.2 eligibility · ตรวจ ณ วันงาน
 begin;
-select plan(7);
+select plan(8);
 select tests.make_fixtures();
 
 -- ไม่มีอะไรเลย → ไม่ eligible พร้อมเหตุผลครบ
@@ -51,6 +51,14 @@ select is((select driver_ineligible_reasons(d, 'sedan', current_date + 3) from d
 select is((select driver_ineligible_reasons(d, 'van', current_date + 3) from drivers d
            where user_id = '00000000-0000-0000-0000-0000000000d1'), array['license_class_mismatch'],
   'license class must cover car type');
+
+-- เอกสารรถที่ไม่อยู่ในรายการต้องส่ง → ไม่ตรวจวันหมดอายุ (เหลือ พ.ร.บ. + ภาคสมัครใจ)
+update settings set value = jsonb_set(value, '{required_docs,vehicle}', '["compulsory_ins","voluntary_ins"]') where key = 'compliance';
+update vehicles set voluntary_insurance_usage = 'commercial_hire' where id = '00000000-0000-0000-0000-0000000000e1';
+select is((select vehicle_ineligible_reasons(v, 'airport_transfer', current_date + 60) from vehicles v
+           where id = '00000000-0000-0000-0000-0000000000e1'),
+  array['compulsory_ins_expired','voluntary_ins_expired'],
+  'only required vehicle documents are checked for expiry');
 
 select * from finish();
 rollback;

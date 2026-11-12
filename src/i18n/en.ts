@@ -373,7 +373,7 @@ export const en: Messages = {
     generalTitle: "Service scope and responsibilities",
     general: [
       "Avera Taxi Thailand takes bookings and arranges cars with drivers. Every job is driven by a driver with a public driving licence, in a vehicle registered for hire or rental as the law requires.",
-      "Every car has valid compulsory (Por Ror Bor), voluntary and passenger insurance on the day of travel.",
+      "Every car has valid compulsory (Por Ror Bor) insurance and voluntary insurance covering hire or rental use on the day of travel.",
       "Passengers and luggage must not exceed what the quote states. If they do, the driver may refuse the trip and it counts as a cancellation by the customer.",
       "No illegal or dangerous items, no animals unless agreed in advance, and no smoking in the car. Damage caused by passengers is charged at cost.",
       "Passengers look after their own belongings. We help trace items left in the car but are not liable for valuables not handed to the driver.",
