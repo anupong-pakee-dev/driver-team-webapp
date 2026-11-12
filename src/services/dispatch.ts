@@ -57,17 +57,24 @@ export async function dispatchNext(db: Db, bookingId: string, opts: { reoffer?: 
   }
 
   const ttl = offerTtlMinutes(new Date(b.pickup_at), new Date(), s);
-  const pay = Math.round(Number(b.price_satang) * (1 - s.commission_rate));
   const offered: string[] = [];
-  for (const c of cands) {
-    const { rows: o } = await db.query(
-      `insert into job_offers (booking_id, driver_id, vehicle_id, expires_at)
-       values ($1, $2, $3, now() + make_interval(mins => $4)) returning id, expires_at`,
-      [bookingId, c.driverId, c.vehicleId, ttl]);
-    const offer = o[0];
-    offered.push(offer.id);
-    const { rows: d } = await db.query(`select line_user_id from users where id = $1`, [c.driverId]);
-    if (!d[0]?.line_user_id) continue;
+  for (const c of cands) offered.push(await sendOffer(db, b, c, ttl, s.commission_rate, cands.length > 1));
+  return { offered: offered[0] ?? null, offers: offered.length };
+}
+
+type OfferBooking = { id: string; service_type: string; car_type: string; pickup_at: string | Date; price_satang: string | number;
+  origin?: { name?: string } | null; destination?: { name?: string } | null };
+
+/** สร้างข้อเสนองาน 1 รายการ + ส่ง LINE ให้คนขับ (ถ้าผูก LINE แล้ว) */
+async function sendOffer(db: Db, b: OfferBooking, c: Candidate, ttl: number, commissionRate: number, competing: boolean) {
+  const pay = Math.round(Number(b.price_satang) * (1 - commissionRate));
+  const { rows: o } = await db.query(
+    `insert into job_offers (booking_id, driver_id, vehicle_id, expires_at)
+     values ($1, $2, $3, now() + make_interval(mins => $4)) returning id, expires_at`,
+    [b.id, c.driverId, c.vehicleId, ttl]);
+  const offer = o[0];
+  const { rows: d } = await db.query(`select line_user_id from users where id = $1`, [c.driverId]);
+  if (d[0]?.line_user_id) {
     await enqueue(db, "line.push", {
       to: d[0].line_user_id,
       messages: [offerFlex({
@@ -79,11 +86,49 @@ export async function dispatchNext(db: Db, bookingId: string, opts: { reoffer?: 
         payText: `ประมาณ ${formatBaht(pay)} (ก่อนหัก ณ ที่จ่าย)`,
         expiresText: formatBangkok(offer.expires_at),
         url: driverLink("/"),
-        competing: cands.length > 1,
+        competing,
       })],
     }, `offer:${offer.id}`);
   }
-  return { offered: offered[0] ?? null, offers: offered.length };
+  return offer.id as string;
+}
+
+/**
+ * คนขับเปิด/ปิดรับงาน
+ * - ปิด: ข้อเสนอที่ค้างอยู่ถูกถอน (งานที่รับแล้วไม่กระทบ) · งานที่ไม่เหลือข้อเสนอค้าง → ประกาศรอบถัดไป/แจ้งเจ้าของ
+ * - เปิด: งานที่ยืนยันแล้วแต่ยังไม่มีคนขับ และคนนี้ผ่านเกณฑ์ → ส่งข้อเสนอให้ทันที
+ */
+export async function setAcceptingJobs(driver: SessionUser, on: boolean) {
+  return withTx({ userId: driver.id, role: driver.role, reason: on ? "driver on" : "driver off" }, async (db) => {
+    const r = await db.query(`update drivers set accepting_jobs = $2 where user_id = $1 returning user_id`, [driver.id, on]);
+    if (!r.rows[0]) throw new BizError("NOT_FOUND");
+    if (!on) {
+      // ล็อกงานก่อนข้อเสนอ (ลำดับเดียวกับ acceptOffer) กัน deadlock ตอนมีคนกดรับพร้อมกัน
+      await db.query(
+        `select id from bookings where id in (select booking_id from job_offers where driver_id = $1 and result = 'pending')
+          order by id for update`, [driver.id]);
+      const { rows } = await db.query(
+        `update job_offers set result = 'withdrawn', reject_reason = 'driver off'
+          where driver_id = $1 and result = 'pending' returning booking_id`, [driver.id]);
+      for (const bookingId of new Set(rows.map((x) => x.booking_id as string))) await dispatchNext(db, bookingId);
+      return { on, offered: 0, withdrawn: rows.length };
+    }
+    const s = await settingsOf(db);
+    const { rows: open } = await db.query(
+      `select b.id, b.service_type, b.car_type, b.pickup_at, b.price_satang, q.origin, q.destination
+         from bookings b join quotes q on q.id = b.quote_id
+        where b.status = 'confirmed' and b.driver_id is null and b.pickup_at > now()
+        order by b.pickup_at`);
+    let offered = 0;
+    for (const b of open) {
+      const mine = (await rankedCandidates(db, b.id)).find((c) => c.driverId === driver.id);
+      if (!mine) continue;
+      const ttl = offerTtlMinutes(new Date(b.pickup_at), new Date(), s);
+      await sendOffer(db, b, mine, ttl, s.commission_rate, true);
+      offered++;
+    }
+    return { on, offered, withdrawn: 0 };
+  });
 }
 
 /** FR-DISP-02: คนขับรับงาน → ตรวจซ้ำ ณ วันงาน → assigned + คนสำรอง + แจ้งลูกค้า · ปิดข้อเสนอของคนอื่น (มีคนรับแล้ว) */

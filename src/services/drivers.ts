@@ -160,24 +160,3 @@ export async function setVehicleActive(owner: SessionUser, id: string, active: b
     if (!rowCount) throw new BizError("NOT_FOUND");
   });
 }
-
-// ───────────── ปฏิทิน (FR-DISP-04) ─────────────
-export async function addBlock(user: SessionUser, from: string, to: string, note?: string) {
-  if (!(Date.parse(to) > Date.parse(from))) throw new BizError("VALIDATION", { field: "to" });
-  return withTx({ userId: user.id, role: user.role, reason: note ?? "block time" }, async (db) => {
-    const clash = await db.query(`select not driver_is_free($1, $2, $3, 0) as busy`, [user.id, from, to]);
-    if (clash.rows[0].busy) throw new BizError("BUSINESS_RULE", { rule: "TIME_CONFLICT" });
-    const { rows } = await db.query(
-      `insert into availability (driver_id, period, kind) values ($1, tstzrange($2, $3, '[)'), 'blocked') returning id`,
-      [user.id, from, to],
-    );
-    return rows[0].id as string;
-  });
-}
-
-export async function removeBlock(user: SessionUser, id: string) {
-  await withTx({ userId: user.id, role: user.role, reason: "unblock time" }, async (db) => {
-    const { rowCount } = await db.query(`delete from availability where id = $1 and driver_id = $2`, [id, user.id]);
-    if (!rowCount) throw new BizError("NOT_FOUND");
-  });
-}

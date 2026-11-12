@@ -8,7 +8,6 @@ import { AppHeader } from "@/components/ui";
 const TABS = [
   { href: "/liff/driver", key: "home", label: "งาน" },
   { href: "/liff/driver/documents", key: "documents", label: "เอกสาร/รถ" },
-  { href: "/liff/driver/calendar", key: "calendar", label: "ปฏิทิน" },
   { href: "/liff/driver/earnings", key: "earnings", label: "รายได้" },
 ] as const;
 
@@ -19,7 +18,7 @@ export function DriverShell({
 }: {
   title: string; subtitle?: string; active: (typeof TABS)[number]["key"] | null; children: ReactNode;
   /** ลิงก์ย้อนกลับ (หน้าวันงาน) */ back?: string;
-  /** ป้ายข้างปุ่มออกจากระบบ เช่น "พร้อมรับงาน" */ extra?: ReactNode;
+  /** ข้างปุ่มออกจากระบบ เช่น สวิตช์รับงาน */ extra?: ReactNode;
   /** ปุ่มหลักลอยด้านล่าง (แทนเมนูล่าง) */ bottom?: ReactNode;
   /** จำนวนคอลัมน์บนจอคอม */ columns?: 1 | 2;
 }) {
@@ -37,7 +36,7 @@ export function DriverShell({
         <div className="fixed inset-x-4 bottom-[max(1.125rem,env(safe-area-inset-bottom))] z-10 mx-auto max-w-[calc(28rem-2rem)] lg:static lg:order-2 lg:mx-5 lg:max-w-none lg:pb-8">{bottom}</div>
       ) : (
         <nav
-          className="fixed inset-x-4 bottom-[max(0.875rem,env(safe-area-inset-bottom))] z-10 mx-auto grid max-w-[calc(28rem-2rem)] grid-cols-4 rounded-[1.375rem] border border-line bg-card p-1.5 shadow-[0_6px_20px_rgba(40,30,10,.08)] lg:static lg:mx-5 lg:mt-2 lg:max-w-md lg:shadow-none"
+          className="fixed inset-x-4 bottom-[max(0.875rem,env(safe-area-inset-bottom))] z-10 mx-auto grid max-w-[calc(28rem-2rem)] grid-cols-3 rounded-[1.375rem] border border-line bg-card p-1.5 shadow-[0_6px_20px_rgba(40,30,10,.08)] lg:static lg:mx-5 lg:mt-2 lg:max-w-md lg:shadow-none"
           aria-label="เมนูคนขับ"
         >
           {TABS.map((t) => (

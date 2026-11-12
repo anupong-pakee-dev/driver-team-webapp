@@ -1,6 +1,6 @@
 -- เฟส 5: เสนองานเฉพาะคนที่ผ่านเกณฑ์ ณ วันงาน + ว่าง · offer ค้างได้ทีละ 1 · check-in รูปบังคับ · append-only · RLS
 begin;
-select plan(13);
+select plan(15);
 select tests.make_fixtures();
 
 -- (ฐานข้อมูล local อาจมีคนขับสาธิตจาก seed:demo → กรองเฉพาะคนขับของ fixture)
@@ -30,6 +30,12 @@ select is(assignment_problems('00000000-0000-0000-0000-0000000000b1', '00000000-
 update vehicles set tax_expiry = current_date + 1 where id = '00000000-0000-0000-0000-0000000000e1';
 select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1') where driver_id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2')), 0, 'expires before job date → no candidate');
 update vehicles set tax_expiry = current_date + 30 where id = '00000000-0000-0000-0000-0000000000e1';
+
+-- คนขับปิดรับงาน (off) → ไม่ได้ข้อเสนอ · เปิดกลับ (on) → ได้ตามเดิม
+update drivers set accepting_jobs = false where user_id = '00000000-0000-0000-0000-0000000000d1';
+select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1') where driver_id = '00000000-0000-0000-0000-0000000000d1'), 0, 'driver switched off gets no offers');
+update drivers set accepting_jobs = true where user_id = '00000000-0000-0000-0000-0000000000d1';
+select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1') where driver_id = '00000000-0000-0000-0000-0000000000d1'), 1, 'driver switched back on is a candidate again');
 
 -- ปิดปฏิทินชนเวลางาน → ไม่ว่าง
 insert into availability (driver_id, period, kind)
