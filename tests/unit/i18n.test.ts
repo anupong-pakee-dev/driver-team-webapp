@@ -23,10 +23,14 @@ describe("dictionaries", () => {
     for (const l of LOCALES) expect(shape(messages(l))).toEqual(th);
   });
 
-  it("have no empty strings (except the Thai-only official note)", () => {
+  it("have no empty strings (except the optional legal banners: draft notice, Thai-only official note)", () => {
     for (const l of LOCALES) {
-      const empty = strings(messages(l)).filter((s) => s.trim() === "");
-      expect(empty.length).toBe(l === "th" ? 1 : 0);
+      const m = messages(l);
+      // ป้าย "ฉบับร่าง" ว่างได้ทุกภาษาหลังเผยแพร่ฉบับจริง · หมายเหตุ "ฉบับไทยมีผลบังคับ" ว่างในภาษาไทย
+      const legal = Object.fromEntries(Object.entries(m.legal).filter(([k]) => k !== "draft" && k !== "officialNote"));
+      const empty = strings({ ...m, legal }).filter((s) => s.trim() === "");
+      expect(empty).toEqual([]);
+      if (l !== "th") expect(m.legal.officialNote.trim()).not.toBe("");
     }
   });
 

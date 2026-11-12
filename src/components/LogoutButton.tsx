@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { liffIdFor, markSignedOut, type LiffApp } from "@/lib/liffSignOut";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 
 /** app = แอป LIFF ที่ออกจากระบบ (ลูกค้า/คนขับ) — ไม่ส่ง = หลังบ้าน */
 export function LogoutButton({ to = "/", className = "", app }: { to?: string; className?: string; app?: LiffApp }) {

@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { apiErrorText } from "@/i18n";
+import { apiErrorText } from "@/i18n/core";
 import { formatBaht } from "@/lib/money";
-import { useI18n } from "@/components/I18nProvider";
+import { useI18n } from "@/components/i18nContext";
 import { btnPrimary, btnSage, btnSecondary, input } from "@/components/ui";
 
 // adapter ข: ส่งรูปสลิป · local มีปุ่มจำลองสลิปที่ถูกต้อง (ไม่มีผู้ให้บริการตรวจสลิป)

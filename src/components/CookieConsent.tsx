@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 
 // FR-PDPA-05 / FR-ADS-10: ถามก่อน · โหลด Pixel หลังยินยอมเท่านั้น · ปฏิเสธ = ไม่มี request ไปแพลตฟอร์มโฆษณา
 // ค่า mc (1/0) อ่านจาก cookie ฝั่ง client เพื่อแสดง/ซ่อนแบนเนอร์ — การบันทึกจริงอยู่ที่ /api/consents/cookie
@@ -35,16 +35,17 @@ function loadMetaPixel(id: string) {
   w.fbq("track", "PageView");
 }
 
-export function CookieConsent({ pixelId }: { pixelId?: string }) {
+/**
+ * initial = ค่า mc จาก cookie ที่เซิร์ฟเวอร์อ่านมา → แบนเนอร์ render มากับ HTML เลย
+ * (ไม่โผล่ทีหลังตอน hydrate — ไม่ดัน LCP/ไม่กระพริบ)
+ */
+export function CookieConsent({ pixelId, initial }: { pixelId?: string; initial: "1" | "0" | null }) {
   const { t } = useI18n();
-  const [state, setState] = useState<"1" | "0" | null | "loading">("loading");
+  const [state, setState] = useState<"1" | "0" | null>(initial);
 
   useEffect(() => {
-    // อ่าน cookie หลัง mount เท่านั้น (server render ไม่รู้ค่า)
-    const v = readConsent();
-    queueMicrotask(() => setState(v));
-    if (v === "1" && pixelId) loadMetaPixel(pixelId);
-  }, [pixelId]);
+    if (initial === "1" && pixelId) loadMetaPixel(pixelId);
+  }, [initial, pixelId]);
 
   async function decide(granted: boolean) {
     await fetch("/api/consents/cookie", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ granted }) });

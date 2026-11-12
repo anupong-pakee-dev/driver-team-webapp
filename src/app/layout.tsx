@@ -15,6 +15,8 @@ const mono = IBM_Plex_Mono({
   variable: "--font-plexmono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  // ใช้กับตัวเลข/รหัสจุดเล็ก ๆ ไม่ใช่ข้อความหลักของหน้า — ไม่ preload (ไม่แย่งแบนด์วิดท์ช่วงแรก) เบราว์เซอร์โหลดเมื่อมีข้อความ mono จริง
+  preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useI18n } from "@/components/I18nProvider";
+import { useI18n } from "@/components/i18nContext";
 import { btnPrimary, btnSecondary, input } from "@/components/ui";
 
 // FR-TRIP-03 ยืนยันจบงาน + คะแนน · FR-TRIP-04 ร้องเรียน

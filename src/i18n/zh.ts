@@ -118,7 +118,7 @@ export const zh: Messages = {
   cookie: {
     label: "Cookie 同意",
     text: "我们使用必要的 Cookie 以保证网站运行，并希望使用 Cookie 衡量广告效果（可选）。",
-    more: "了解更多",
+    more: "阅读隐私声明",
     necessary: "仅必要",
     acceptAll: "全部接受",
   },

@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LOCALES, LOCALE_NAMES } from "@/i18n";
-import { useI18n } from "./I18nProvider";
+import { LOCALES, LOCALE_NAMES } from "@/i18n/core";
+import { useI18n } from "./i18nContext";
 
 // ปุ่มเปลี่ยนภาษา TH / EN / 中文 — บันทึกใน cookie และบัญชี (ข้อความ LINE ส่งตามภาษานี้)
 export function LanguageSwitcher({ tone = "light" }: { tone?: "dark" | "light" }) {

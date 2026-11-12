@@ -117,7 +117,7 @@ export const en: Messages = {
   cookie: {
     label: "Cookie consent",
     text: "We use essential cookies to run this site, and would like to use cookies to measure our ads (optional).",
-    more: "Learn more",
+    more: "Read our privacy notice",
     necessary: "Essential only",
     acceptAll: "Accept all",
   },

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { apiErrorText } from "@/i18n";
-import { useI18n } from "@/components/I18nProvider";
+import { apiErrorText } from "@/i18n/core";
+import { useI18n } from "@/components/i18nContext";
 import { btnPrimary, input } from "@/components/ui";
 
 // FR-BOOK-03: ยอมรับ Terms + Privacy (version ล่าสุด) → FR-PAY-01 สร้าง booking + QR มัดจำ

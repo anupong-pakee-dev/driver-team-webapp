@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { QuoteFormOptions } from "@/services/quoteForm";
-import { apiErrorText } from "@/i18n";
+import { apiErrorText } from "@/i18n/core";
 import { formatBaht } from "@/lib/money";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 import { LocationInput, type PickedPlace } from "./LocationInput";
 import { btnPrimary, btnSecondary, floatBar, floatBarDesk, input, segItem, segWrap } from "./ui";
 

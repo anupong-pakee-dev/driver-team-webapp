@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { apiErrorText } from "@/i18n";
+import { apiErrorText } from "@/i18n/core";
 import { clearSignedOut, isSignedOut, type LiffApp } from "@/lib/liffSignOut";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 import { btnPrimary } from "./ui";
 
 // §9.1 LIFF: init → login → ID token → POST /api/auth/liff → session cookie

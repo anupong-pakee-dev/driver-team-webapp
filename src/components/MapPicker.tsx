@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 import type { Map as LeafletMap } from "leaflet";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 import { btnPrimary, btnSecondary } from "./ui";
 
 // ปักหมุดบนแผนที่ OpenStreetMap (ฟรี ไม่ใช้ key) — หมุดอยู่กลางจอ เลื่อนแผนที่ให้หมุดตรงจุด

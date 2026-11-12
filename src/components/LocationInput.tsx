@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { useI18n } from "./I18nProvider";
+import { useI18n } from "./i18nContext";
 import { input as inputCls } from "./ui";
 
 // FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง 3 แบบ: GPS มือถือ · ปักหมุดบนแผนที่ (OSM) · วางลิงก์/พิกัดจาก Google Maps

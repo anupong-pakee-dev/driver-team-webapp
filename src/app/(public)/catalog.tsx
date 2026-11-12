@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { CatalogTab } from "@/services/catalog";
 import { formatBaht } from "@/lib/money";
 import { Card, Close, Menu, Pin, Receipt, ShieldCheck } from "@/components/icons";
-import { useI18n } from "@/components/I18nProvider";
+import { useI18n } from "@/components/i18nContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { floatBar, floatBarDesk, segItem, segWrap } from "@/components/ui";
 
@@ -90,56 +90,55 @@ export function Catalog({ brandName, tabs }: { brandName: string; tabs: CatalogT
           </p>
         )}
 
-        <ul className="mt-3.5 space-y-2" role="radiogroup" aria-label={c.chooseCar}>
+        <div className="mt-3.5 space-y-2" role="radiogroup" aria-label={c.chooseCar}>
           {tab?.items.map((it) => {
             const on = it.carType === selected;
             return (
-              <li key={it.carType}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setSelected(it.carType)}
-                  className={
-                    "w-full overflow-hidden bg-card text-left transition-shadow " +
-                    (on ? "rounded-[var(--radius-card)] border-2 border-sage" : "flex items-center gap-3 rounded-[1.125rem] border border-line py-2.5 pl-2.5 pr-3.5")
-                  }
-                >
-                  {on ? (
-                    <>
-                      {/* รูปรถจริงจาก bucket public-assets ในเฟส 3 */}
-                      <div className={`grid h-[150px] place-items-center font-mono text-xs text-sage ${PHOTO_BIG}`}>{c.photo(it.name)}</div>
-                      <div className="flex items-end justify-between gap-3 px-4 py-3.5">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[1.1875rem] font-bold leading-tight">{it.name}</span>
-                            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sage" aria-hidden="true">
-                              <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
-                            </span>
-                          </div>
-                          <div className="mt-0.5 text-[0.8125rem] text-muted">{it.sub}</div>
+              <button
+                key={it.carType}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setSelected(it.carType)}
+                className={
+                  "w-full overflow-hidden bg-card text-left transition-shadow " +
+                  (on ? "block rounded-[var(--radius-card)] border-2 border-sage" : "flex items-center gap-3 rounded-[1.125rem] border border-line py-2.5 pl-2.5 pr-3.5")
+                }
+              >
+                {on ? (
+                  <>
+                    {/* รูปรถจริงจาก bucket public-assets ในเฟส 3 */}
+                    <div className={`grid h-[150px] place-items-center font-mono text-xs text-sage ${PHOTO_BIG}`}>{c.photo(it.name)}</div>
+                    <div className="flex items-end justify-between gap-3 px-4 py-3.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[1.1875rem] font-bold leading-tight">{it.name}</span>
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-sage" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" className="h-[13px] w-[13px]" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                          </span>
                         </div>
-                        <div className="shrink-0 text-right">
-                          <div className="text-xs text-muted">{c.from}</div>
-                          <div className="text-[1.625rem] font-bold leading-none">{formatBaht(it.fromSatang)}</div>
-                        </div>
+                        <div className="mt-0.5 text-[0.8125rem] text-muted">{it.sub}</div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={`h-11 w-14 shrink-0 rounded-xl ${PHOTO_SMALL}`} aria-hidden="true" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[0.9375rem] font-semibold">{it.name}</div>
-                        <div className="text-xs text-muted">{it.sub}</div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-xs text-muted">{c.from}</div>
+                        <div className="text-[1.625rem] font-bold leading-none">{formatBaht(it.fromSatang)}</div>
                       </div>
-                      <div className="text-base font-bold">{formatBaht(it.fromSatang)}</div>
-                    </>
-                  )}
-                </button>
-              </li>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`h-11 w-14 shrink-0 rounded-xl ${PHOTO_SMALL}`} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[0.9375rem] font-semibold">{it.name}</div>
+                      <div className="text-xs text-muted">{it.sub}</div>
+                    </div>
+                    <div className="text-base font-bold">{formatBaht(it.fromSatang)}</div>
+                  </>
+                )}
+              </button>
             );
           })}
-        </ul>
+        </div>
 
         <ul className="mt-6 grid grid-cols-3 text-center text-[0.8125rem] text-muted lg:hidden">
           <li className="flex flex-col items-center gap-1.5">
