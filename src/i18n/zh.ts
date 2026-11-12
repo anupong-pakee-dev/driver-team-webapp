@@ -214,6 +214,11 @@ export const zh: Messages = {
     mapLabel: "在地图上标记",
     close: "关闭",
     useHere: "使用此位置",
+    searchPh: "搜索地点，例如 Siam Paragon",
+    search: "搜索",
+    searching: "正在搜索…",
+    noResults: "未找到地点，请换个名称或手动移动地图。",
+    searchFailed: "搜索失败，请重试。",
     pinnedAt: (coords: string) => `标记位置（${coords}）`,
   },
   quote: {

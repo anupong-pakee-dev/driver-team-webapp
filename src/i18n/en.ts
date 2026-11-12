@@ -213,6 +213,11 @@ export const en: Messages = {
     mapLabel: "Pin on map",
     close: "Close",
     useHere: "Use this location",
+    searchPh: "Search a place, e.g. Siam Paragon",
+    search: "Search",
+    searching: "Searching…",
+    noResults: "No places found. Try another name or move the map yourself.",
+    searchFailed: "Search failed. Please try again.",
     pinnedAt: (coords: string) => `Pinned location (${coords})`,
   },
   quote: {

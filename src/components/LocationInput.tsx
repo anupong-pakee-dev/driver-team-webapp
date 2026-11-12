@@ -135,8 +135,8 @@ export function LocationInput({
         <MapPicker
           initial={value}
           onClose={() => setMapOpen(false)}
-          onConfirm={(p) => {
-            set(p, "pin");
+          onConfirm={(p, name) => {
+            set(p, "pin", name);
             setMapOpen(false);
           }}
         />

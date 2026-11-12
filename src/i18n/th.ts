@@ -214,6 +214,11 @@ export const th = {
     mapLabel: "ปักหมุดบนแผนที่",
     close: "ปิด",
     useHere: "ใช้ตำแหน่งนี้",
+    searchPh: "ค้นหาสถานที่ เช่น สยามพารากอน",
+    search: "ค้นหา",
+    searching: "กำลังค้นหา…",
+    noResults: "ไม่พบสถานที่ — ลองชื่ออื่น หรือเลื่อนแผนที่เอง",
+    searchFailed: "ค้นหาไม่สำเร็จ ลองอีกครั้ง",
     pinnedAt: (coords: string) => `ตำแหน่งที่ปักไว้ (${coords})`,
   },
   quote: {
