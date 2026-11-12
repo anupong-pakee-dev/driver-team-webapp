@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useI18n } from "./i18nContext";
 import { input as inputCls } from "./ui";
 
@@ -27,10 +27,25 @@ export function LocationInput({
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState<"gps" | "link" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // ชื่อที่ระบบเติมให้ (ไม่ใช่ที่ลูกค้าพิมพ์เอง) → ย้ายจุดแล้วหาชื่อใหม่ได้
+  const [autoNamed, setAutoNamed] = useState(false);
+  // นับการเปลี่ยนแปลง: ผลหาชื่อที่มาช้า (ลูกค้าพิมพ์เอง/ย้ายจุดไปแล้ว) ต้องไม่ทับของใหม่
+  const edits = useRef(0);
 
   const set = (p: { lat: number; lng: number }, source: PickedPlace["source"], name?: string) => {
     setError(null);
-    onChange({ lat: p.lat, lng: p.lng, source, name: name ?? value?.name ?? "" });
+    const typed = value?.name && !autoNamed ? value.name : "";
+    const picked = { lat: p.lat, lng: p.lng, source, name: name || typed };
+    onChange(picked);
+    const mine = ++edits.current;
+    if (picked.name) return setAutoNamed(false);
+    // ไม่มีชื่อ → หาชื่อสถานที่จากพิกัดมาเติม (คนขับอ่านง่ายกว่าพิกัด) · หาไม่ได้ก็ปล่อยว่าง
+    setAutoNamed(true);
+    void fetch("/api/places/reverse", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lat: p.lat, lng: p.lng }),
+    }).then((r) => (r.ok ? r.json() : null)).then((out) => {
+      if (out?.name && edits.current === mine) onChange({ ...picked, name: out.name });
+    }).catch(() => {});
   };
 
   function useGps() {
@@ -85,13 +100,13 @@ export function LocationInput({
             </span>
             <span className="flex shrink-0 gap-3">
               <button type="button" className="text-sage underline" onClick={() => setMapOpen(true)}>{L.adjust}</button>
-              <button type="button" className="text-muted underline" onClick={() => onChange(null)}>{L.clear}</button>
+              <button type="button" className="text-muted underline" onClick={() => { edits.current++; onChange(null); }}>{L.clear}</button>
             </span>
           </div>
           <input className={inputCls} maxLength={120} value={value.name}
             placeholder={L.namePh}
             aria-label={L.nameLabel(label)}
-            onChange={(e) => onChange({ ...value, name: e.target.value })} />
+            onChange={(e) => { edits.current++; setAutoNamed(false); onChange({ ...value, name: e.target.value }); }} />
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">

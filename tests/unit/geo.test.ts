@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estimateRoute, haversineM, inThailand, navLinks, parseMapsLink } from "@/domain/geo";
+import { estimateRoute, haversineM, inThailand, navLinks, parseMapsLink, placeName } from "@/domain/geo";
 
 describe("parseMapsLink", () => {
   it("reads plain coordinates", () => {
@@ -61,5 +61,25 @@ describe("inThailand / navLinks", () => {
       google: "https://www.google.com/maps/dir/?api=1&destination=13.7,100.5",
       waze: "https://waze.com/ul?ll=13.7,100.5&navigate=yes",
     });
+  });
+});
+
+describe("placeName", () => {
+  it("joins the place, road, area and province without repeats", () => {
+    expect(placeName({
+      name: "Central World",
+      address: { road: "ถนนราชดำริ", suburb: "ลุมพินี", city_district: "ปทุมวัน", city: "กรุงเทพมหานคร" },
+    })).toBe("Central World, ถนนราชดำริ, ลุมพินี, ปทุมวัน");
+  });
+  it("works without a place name and skips duplicates", () => {
+    expect(placeName({ address: { road: "ถนนสุขุมวิท", district: "บางละมุง", state: "ชลบุรี", city: "ชลบุรี" } }))
+      .toBe("ถนนสุขุมวิท, บางละมุง, ชลบุรี");
+  });
+  it("returns null when there is nothing to show", () => {
+    expect(placeName({ address: {} })).toBeNull();
+  });
+  it("caps long names at 120 characters", () => {
+    const long = "ก".repeat(200);
+    expect(placeName({ name: long })!.length).toBe(118);
   });
 });

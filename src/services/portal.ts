@@ -54,7 +54,9 @@ export const CAR_TYPES = [
   { value: "van_vip", label: "รถตู้ VIP" },
   { value: "mpv_premium", label: "MPV พรีเมียม (Alphard)" },
 ];
-export const carLabel = (v: string) => CAR_TYPES.find((c) => c.value === v)?.label ?? v;
+// driver_only ไม่อยู่ใน CAR_TYPES (ไม่ใช่ประเภทรถที่คนขับลงทะเบียนได้) แต่ต้องมีชื่อไว้แสดงในงาน
+export const carLabel = (v: string) =>
+  v === "driver_only" ? "รถลูกค้า (คนขับอย่างเดียว)" : CAR_TYPES.find((c) => c.value === v)?.label ?? v;
 
 export const SERVICE_TYPES = [
   { value: "airport_transfer", label: "สนามบิน" },

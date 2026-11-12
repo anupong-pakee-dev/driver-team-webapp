@@ -63,6 +63,7 @@ export function quoteFlex(q: {
 export function offerFlex(o: {
   offerId: string; serviceLabel: string; carLabel: string; route: string; pickupText: string;
   payText: string; expiresText: string; url: string; competing?: boolean;
+  /** ลิงก์ Google Maps นำทางจากตำแหน่งคนขับไปจุดรับ (ดูระยะทาง/เวลาก่อนรับงาน) */ pickupMapUrl?: string;
 }) {
   const text = (t: string, extra: Record<string, unknown> = {}) => ({ type: "text", text: t, wrap: true, size: "sm", ...extra });
   return {
@@ -92,9 +93,22 @@ export function offerFlex(o: {
         contents: [
           { type: "button", style: "primary", color: AMBER, action: { type: "postback", label: "รับงาน", data: `offer:accept:${o.offerId}`, displayText: "รับงาน" } },
           { type: "button", style: "secondary", action: { type: "postback", label: "ปฏิเสธ", data: `offer:reject:${o.offerId}`, displayText: "ปฏิเสธงาน" } },
+          ...(o.pickupMapUrl ? [{ type: "button", style: "link", action: { type: "uri", label: "ดูระยะทางไปจุดรับ", uri: o.pickupMapUrl } }] : []),
           { type: "button", style: "link", action: { type: "uri", label: "ดูรายละเอียด", uri: o.url } },
         ],
       },
     },
+  };
+}
+
+/** หมุดจุดรับในแชท LINE (แตะแล้วเปิดแผนที่ในเครื่อง) — ส่งคู่กับข้อเสนองาน นับโควตาเป็นข้อความเดียวกัน */
+export function pickupLocation(p: { lat: number; lng: number; name?: string }, title: string) {
+  const clip = (t: string, n: number) => (t.length > n ? t.slice(0, n - 1) + "…" : t);
+  return {
+    type: "location",
+    title: clip(title, 100),
+    address: clip(p.name?.trim() || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`, 100),
+    latitude: p.lat,
+    longitude: p.lng,
   };
 }

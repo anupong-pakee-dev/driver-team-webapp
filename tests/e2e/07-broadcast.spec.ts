@@ -27,6 +27,16 @@ test("every eligible driver gets the job; the first to accept wins and the rest 
   // ทุกคนได้การ์ดเสนองานใน LINE
   const cards = await q<{ to: string }>(`select payload->>'to' as to from outbox where dedupe_key = any($1)`, [offers.map((o) => `offer:${o.id}`)]);
   expect(cards.length).toBe(offers.length);
+  // แต่ละข้อเสนอมีหมุดจุดรับ (LINE location) + ปุ่มดูระยะทางไปจุดรับ
+  const msgs = await q<{ kinds: string[]; uris: string[] }>(
+    `select array(select m->>'type' from jsonb_array_elements(payload->'messages') m) as kinds,
+            array(select b->'action'->>'uri' from jsonb_array_elements(payload->'messages'->0->'contents'->'footer'->'contents') b
+                   where b->'action'->>'type' = 'uri') as uris
+       from outbox where dedupe_key = any($1)`, [offers.map((o) => `offer:${o.id}`)]);
+  for (const m of msgs) {
+    expect(m.kinds).toEqual(["flex", "location"]);
+    expect(m.uris.some((u) => u.startsWith("https://www.google.com/maps/dir/"))).toBe(true);
+  }
 
   const [winner, loser] = [offers.find((o) => o.line === "Udemo-anan")!, offers.find((o) => o.line === "Udemo-boon")!];
   const a = await ctx();

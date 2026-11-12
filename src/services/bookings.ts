@@ -18,7 +18,7 @@ import { log } from "@/lib/redact";
 import { getSettings } from "@/lib/settings";
 import { formatBangkok } from "@/lib/time";
 import { enqueue } from "./outbox";
-import { dispatchNext } from "./dispatch";
+import { dispatchNext, driverLink } from "./dispatch";
 import { bookingSource } from "./ads";
 
 // FR-BOOK-03/06, FR-PAY-01..06 · §6 state machine (เปลี่ยนสถานะผ่านฟังก์ชันเดียว)
@@ -209,7 +209,7 @@ async function markVerified(db: Db, paymentId: string, patch: { method?: string;
   );
   const receiptId = await issueReceipt(db, paymentId);
 
-  const { rows: bk } = await db.query(`select id, status, customer_id, pickup_at from bookings where id = $1`, [p.booking_id]);
+  const { rows: bk } = await db.query(`select id, status, customer_id, driver_id, pickup_at, price_satang from bookings where id = $1`, [p.booking_id]);
   const b = bk[0];
   const amount = formatBaht(Number(p.amount_satang));
   if (p.kind === "deposit" && b.status === "awaiting_deposit") {
@@ -222,6 +222,20 @@ async function markVerified(db: Db, paymentId: string, patch: { method?: string;
     await dispatchNext(db, b.id);
   } else {
     await notifyUser(db, b.customer_id, (l) => messages(l).line.paid(amount, customerLink(`/receipts/${receiptId}`)), `paid:${paymentId}`);
+    // จ่ายครบแล้ว → แจ้งคนขับที่รับงานนี้ (ไม่ต้องเก็บเงินหน้างาน) · ยังไม่มีคนขับ = ไม่ต้องแจ้ง
+    if (p.kind === "balance" && b.driver_id) {
+      const { rows: t } = await db.query(
+        `select coalesce(sum(amount_satang), 0)::bigint as paid from payments
+          where booking_id = $1 and kind in ('deposit','balance') and status = 'verified'`, [b.id]);
+      if (Number(t[0].paid) >= Number(b.price_satang)) {
+        await notifyUser(db, b.driver_id,
+          `ลูกค้าชำระยอดครบแล้ว ✓
+งาน ${formatBangkok(b.pickup_at)}
+ไม่ต้องเก็บเงินหน้างาน
+ดูงาน: ${driverLink(`/jobs/${b.id}`)}`,
+          `balance-paid-driver:${b.id}`);
+      }
+    }
   }
   return { already: false, bookingId: b.id as string, receiptId };
 }

@@ -1,5 +1,6 @@
 import "server-only";
-import { offerFlex } from "@/adapters/line/flex";
+import { offerFlex, pickupLocation } from "@/adapters/line/flex";
+import { navLinks } from "@/domain/geo";
 import { offerTtlMinutes, onePerDriver, rankCandidates, type Candidate } from "@/domain/dispatch";
 import { messages } from "@/i18n";
 import type { SessionUser } from "@/lib/auth";
@@ -14,7 +15,7 @@ import { notifyRoles, notifyUser, transition } from "./bookings";
 // §7.3 Dispatch: ประกาศงานถึงคนขับทุกคนที่ผ่านเกณฑ์ ณ วันงานพร้อมกัน · ใครกดรับก่อนได้งาน · คนอื่นได้แจ้งว่ามีคนรับแล้ว
 // TTL · คนสำรอง · override (FR-DISP-01..03) · ไม่มีใครรับภายในเวลา → แจ้งเจ้าของเลือกเอง
 
-const driverLink = (path: string) =>
+export const driverLink = (path: string) =>
   process.env.NEXT_PUBLIC_LIFF_ID_DRIVER
     ? `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID_DRIVER}${path}`
     : `${process.env.APP_URL ?? "http://localhost:3000"}/liff/driver${path}`;
@@ -63,7 +64,7 @@ export async function dispatchNext(db: Db, bookingId: string, opts: { reoffer?: 
 }
 
 type OfferBooking = { id: string; service_type: string; car_type: string; pickup_at: string | Date; price_satang: string | number;
-  origin?: { name?: string } | null; destination?: { name?: string } | null };
+  origin?: { name?: string; lat?: number; lng?: number } | null; destination?: { name?: string } | null };
 
 /** สร้างข้อเสนองาน 1 รายการ + ส่ง LINE ให้คนขับ (ถ้าผูก LINE แล้ว) */
 async function sendOffer(db: Db, b: OfferBooking, c: Candidate, ttl: number, commissionRate: number, competing: boolean) {
@@ -74,6 +75,7 @@ async function sendOffer(db: Db, b: OfferBooking, c: Candidate, ttl: number, com
     [b.id, c.driverId, c.vehicleId, ttl]);
   const offer = o[0];
   const { rows: d } = await db.query(`select line_user_id from users where id = $1`, [c.driverId]);
+  const at = b.origin?.lat != null && b.origin?.lng != null ? { lat: b.origin.lat, lng: b.origin.lng, name: b.origin.name } : null;
   if (d[0]?.line_user_id) {
     await enqueue(db, "line.push", {
       to: d[0].line_user_id,
@@ -87,7 +89,10 @@ async function sendOffer(db: Db, b: OfferBooking, c: Candidate, ttl: number, com
         expiresText: formatBangkok(offer.expires_at),
         url: driverLink("/"),
         competing,
-      })],
+        pickupMapUrl: at ? navLinks(at).google : undefined,
+      }),
+      // หมุดจุดรับ: คนขับดูได้ทันทีว่าใกล้/ไกลแค่ไหนก่อนกดรับ (push เดียวกัน = นับโควตา 1 ข้อความ)
+      ...(at ? [pickupLocation(at, `จุดรับ · ${formatBangkok(b.pickup_at)}`)] : [])],
     }, `offer:${offer.id}`);
   }
   return offer.id as string;

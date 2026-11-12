@@ -79,3 +79,25 @@ export const navLinks = (p: LatLng) => ({
   google: `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`,
   waze: `https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes`,
 });
+
+// ───── ชื่อสถานที่จากผล reverse geocoding (OpenStreetMap Nominatim) ─────
+export type NominatimReverse = {
+  name?: string;
+  address?: Record<string, string>;
+};
+
+/** ชื่อสั้นอ่านง่าย: ชื่อสถานที่ · ถนน · แขวง/ตำบล · เขต/อำเภอ · จังหวัด */
+export function placeName(data: NominatimReverse): string | null {
+  const a = data.address ?? {};
+  const parts = [
+    data.name,
+    a.road,
+    a.suburb ?? a.quarter ?? a.neighbourhood ?? a.village ?? a.hamlet,
+    a.city_district ?? a.district ?? a.town ?? a.county,
+    a.city ?? a.state ?? a.province,
+  ].map((x) => x?.trim()).filter((x): x is string => !!x);
+  const unique = parts.filter((x, i) => parts.indexOf(x) === i);
+  if (!unique.length) return null;
+  const s = unique.slice(0, 4).join(", ");
+  return s.length > 120 ? s.slice(0, 117) + "…" : s;
+}

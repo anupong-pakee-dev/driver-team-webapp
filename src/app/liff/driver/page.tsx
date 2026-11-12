@@ -11,6 +11,7 @@ import { DriverLoginScreen, DriverShell } from "./shell";
 import { driverPage } from "./session";
 import { OfferActions } from "./offers";
 import { AcceptingSwitch } from "./onoff";
+import { navLinks } from "@/domain/geo";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,13 @@ export default async function DriverHome() {
             </dl>
             <span className="self-end whitespace-nowrap text-xs text-on-dark">{o.pax} คน · {o.luggage} กระเป๋า</span>
           </div>
+          {o.origin?.lat != null && o.origin?.lng != null && (
+            // เปิด Google Maps นำทางจากตำแหน่งคนขับ → เห็นระยะทาง/เวลาไปจุดรับก่อนตัดสินใจ
+            <a href={navLinks({ lat: o.origin.lat, lng: o.origin.lng }).google} target="_blank" rel="noreferrer"
+              className="mt-2.5 flex items-center justify-center gap-1.5 rounded-2xl border border-white/20 py-2.5 text-sm font-semibold text-sand">
+              📍 ดูระยะทางไปจุดรับ
+            </a>
+          )}
           <div className="mt-3.5"><OfferActions offerId={o.id} dark /></div>
           <p className="mt-2.5 text-center text-[0.7rem] text-on-dark">ก่อนหัก ณ ที่จ่าย · ไม่รวมทางด่วน/ค่าจอด (เบิกตามจริง)</p>
         </section>

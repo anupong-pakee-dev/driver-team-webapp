@@ -15,6 +15,7 @@ import { formatBangkok } from "@/lib/time";
 import { enqueue } from "./outbox";
 import { invalidateCatalog } from "./catalog";
 import { touchesFor } from "./ads";
+import { reverseGeocode } from "@/adapters/maps/reverse";
 
 // FR-PRICE-01, FR-QUOTE-01/02/04, BR-QUOTE-01..03
 // ตำแหน่งมาจากลูกค้า (GPS / ปักหมุด / ลิงก์ Google Maps) · ระยะทาง = ประมาณจากพิกัด (domain/geo) ไม่เรียก API แผนที่
@@ -83,7 +84,7 @@ export async function createQuote(actor: SessionUser, input: CreateQuoteInput) {
   // ─── สถานที่: ฝั่งสนามบินใช้พิกัดจาก settings เสมอ (ไม่เชื่อค่าจาก client) ───
   let origin = toPlace(input.origin);
   let destination = toPlace(input.destination);
-  const stops = input.stops.map((p) => toPlace(p)!);
+  let stops = input.stops.map((p) => toPlace(p)!);
   if (input.service_type === "airport_transfer" && input.flight) {
     const ap = airports[input.flight.airport];
     if (!ap) throw new BizError("VALIDATION", { field: "airport" });
@@ -91,6 +92,17 @@ export async function createQuote(actor: SessionUser, input: CreateQuoteInput) {
     if (input.flight.direction === "arrival") origin = airport;
     else destination = airport;
   }
+  // ลูกค้าไม่ได้ตั้งชื่อจุด → หาชื่อสถานที่จากพิกัด (OSM) ให้คนขับอ่านง่าย · หาไม่ได้ = แสดงพิกัดตามเดิม
+  const named = async (pl: Place | null): Promise<Place | null> => {
+    if (!pl || pl.source === "airport" || !pl.name.startsWith("📍") || pl.lat == null || pl.lng == null) return pl;
+    const name = await reverseGeocode({ lat: pl.lat, lng: pl.lng });
+    return name ? { ...pl, name } : pl;
+  };
+  origin = await named(origin);
+  destination = await named(destination);
+  const namedStops: Place[] = [];
+  for (const st of stops) namedStops.push((await named(st))!);
+  stops = namedStops;
   if (!origin) throw new BizError("VALIDATION", { field: "origin" });
 
   const req: QuoteRequest = {
