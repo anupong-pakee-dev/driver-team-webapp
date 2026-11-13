@@ -21,7 +21,7 @@ const OFFER_TH: Record<string, string> = {
   OFFER_ACCEPTED: "รับงานนี้ไปแล้ว",
   OFFER_REJECTED: "ปฏิเสธงานนี้ไปแล้ว",
   OFFER_WITHDRAWN: "งานนี้ถูกยกเลิก/มอบให้คนอื่นแล้ว",
-  OFFER_TAKEN: "งานนี้มีคนรับไปแล้ว — รอข้อเสนองานถัดไปได้เลย",
+  OFFER_TAKEN: "🔒 ปิดงานนี้แล้ว — มีคนขับรับไปแล้ว รอข้อเสนองานถัดไปได้เลย",
   TIME_CONFLICT: "เวลาชนกับงานอื่นหรือช่วงที่ปิดไว้",
 };
 
@@ -36,8 +36,8 @@ async function handlePostback(e: LineEvent) {
   let text: string;
   try {
     if (m[1] === "accept") {
-      await acceptOffer(driver, m[2]);
-      text = "รับงานแล้ว ✓ ดูรายละเอียดในแอป";
+      await acceptOffer(driver, m[2], null, { viaLine: true });
+      text = "✅ คุณได้งานนี้แล้ว — ปิดรับงานแล้ว\nดูรายละเอียดในแอป";
     } else {
       await rejectOffer(driver, m[2], "ปฏิเสธผ่าน LINE");
       text = "ปฏิเสธงานแล้ว";

@@ -58,7 +58,13 @@ test("every eligible driver gets the job; the first to accept wins and the rest 
   const taken = await q<{ text: string }>(`select payload->'messages'->0->>'text' as text from outbox where dedupe_key = any($1)`,
     [offers.filter((o) => o.id !== winner.id).map((o) => `taken:${o.id}`)]);
   expect(taken.length).toBe(offers.length - 1);
-  expect(taken[0].text).toContain("มีคนรับแล้ว");
+  expect(taken[0].text).toContain("ปิดงานนี้แล้ว");
+  // คนที่ได้งาน (กดรับในแอป) ได้ LINE ยืนยันว่าได้งานและปิดรับแล้ว
+  const won = await q<{ to: string; text: string }>(
+    `select payload->>'to' as to, payload->'messages'->0->>'text' as text from outbox where dedupe_key = $1`, [`won:${winner.id}`]);
+  expect(won).toHaveLength(1);
+  expect(won[0].to).toBe(winner.line);
+  expect(won[0].text).toContain("คุณได้งานนี้แล้ว");
 
   // หน้าแอปของคนที่ไม่ได้งาน: มีคนรับแล้ว → งานจบ → ปิดงานแล้ว
   expect((await context.request.post(`${BASE}/api/auth/dev`, { headers: { origin: BASE }, data: { user_id: loser.driver_id } })).ok()).toBe(true);

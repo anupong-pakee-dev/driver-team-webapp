@@ -137,7 +137,8 @@ export async function setAcceptingJobs(driver: SessionUser, on: boolean) {
 }
 
 /** FR-DISP-02: คนขับรับงาน → ตรวจซ้ำ ณ วันงาน → assigned + คนสำรอง + แจ้งลูกค้า · ปิดข้อเสนอของคนอื่น (มีคนรับแล้ว) */
-export async function acceptOffer(driver: SessionUser, offerId: string, vehicleId?: string | null) {
+/** viaLine: กดรับจากปุ่มในแชท LINE → webhook ตอบกลับเอง (reply ฟรี) ไม่ต้อง push ยืนยันซ้ำ */
+export async function acceptOffer(driver: SessionUser, offerId: string, vehicleId?: string | null, opts: { viaLine?: boolean } = {}) {
   return withTx({ userId: driver.id, role: driver.role, reason: "accept offer" }, async (db) => {
     // ล็อกงานก่อนข้อเสนอเสมอ: คนขับหลายคนกดรับพร้อมกัน → เข้าคิวที่งาน คนแรกได้ คนถัดไปเห็นว่ามีคนรับแล้ว (ไม่ deadlock)
     const { rows: ref } = await db.query(`select booking_id from job_offers where id = $1`, [offerId]);
@@ -165,6 +166,13 @@ export async function acceptOffer(driver: SessionUser, offerId: string, vehicleI
     const backup = (await rankedCandidates(db, o.booking_id)).find((c) => c.driverId !== driver.id);
     await db.query(`update bookings set backup_driver_id = $2 where id = $1`, [o.booking_id, backup?.driverId ?? null]);
     await notifyAssigned(db, o.booking_id);
+    // ยืนยันกับคนที่ได้งานทาง LINE ด้วย — การ์ดเสนองานเดิมในแชทแก้ไม่ได้ จึงบอกชัดว่างานนี้ปิดรับแล้ว
+    if (!opts.viaLine) {
+      const { rows: bt } = await db.query(`select pickup_at from bookings where id = $1`, [o.booking_id]);
+      await notifyUser(db, driver.id,
+        `✅ คุณได้งานนี้แล้ว — ปิดรับงานแล้ว\nงาน ${formatBangkok(bt[0].pickup_at)}\nดูงาน: ${driverLink(`/jobs/${o.booking_id}`)}`,
+        `won:${offerId}`);
+    }
     return { booking_id: o.booking_id as string, status: "assigned" };
   });
 }
@@ -175,7 +183,8 @@ async function closeOtherOffers(db: Db, bookingId: string, result: "taken" | "wi
     `update job_offers o set result = $2 where booking_id = $1 and result = 'pending'
      returning o.id, o.driver_id, (select pickup_at from bookings where id = $1) as pickup_at`, [bookingId, result]);
   for (const r of rows) {
-    await notifyUser(db, r.driver_id, `งาน ${formatBangkok(r.pickup_at)} มีคนรับแล้ว — ขอบคุณที่สนใจ รอข้อเสนองานถัดไปได้เลย`, `taken:${r.id}`);
+    await notifyUser(db, r.driver_id,
+      `🔒 ปิดงานนี้แล้ว\nงาน ${formatBangkok(r.pickup_at)} มีคนขับรับไปแล้ว\nขอบคุณที่สนใจ รอข้อเสนองานถัดไปได้เลย`, `taken:${r.id}`);
   }
 }
 
