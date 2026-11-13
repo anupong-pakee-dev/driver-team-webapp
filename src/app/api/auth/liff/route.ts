@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { verifyLiffIdToken, type LineIdentity } from "@/adapters/line/liffAuth";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, negotiate, pickLocale } from "@/i18n";
 import { startSession } from "@/lib/auth";
 import { SYSTEM, withTx } from "@/lib/db";
-import { devLoginEnabled } from "@/lib/dev";
-import { BizError, errorResponse } from "@/lib/errors";
+import { identifyLine } from "@/lib/lineIdentity";
+import { errorResponse } from "@/lib/errors";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
 import { redeemInvite } from "@/services/drivers";
 import { upsertLineUser } from "@/services/users";
@@ -17,21 +16,12 @@ const Body = z.strictObject({
   lang: z.string().max(20).optional(),   // liff.getLanguage() — ภาษาของแอป LINE
 });
 
-async function identify(idToken: string): Promise<LineIdentity> {
-  // local: จำลอง LINE login ด้วย "dev:<line_user_id>" (ปิดใน production)
-  if (devLoginEnabled() && idToken.startsWith("dev:")) return { lineUserId: idToken.slice(4), name: null };
-  try {
-    return await verifyLiffIdToken(idToken);
-  } catch {
-    throw new BizError("UNAUTHENTICATED");
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
     await rateLimit(`liff-login:${clientIp(req)}`, 30, 60);
     const body = Body.parse(await req.json());
-    const identity = await identify(body.id_token);
+    const identity = await identifyLine(body.id_token);
     const userId = await withTx({ ...SYSTEM, reason: body.invite_token ? "driver invite redeem" : "liff login" }, (db) =>
       body.app === "driver" && body.invite_token
         ? redeemInvite(db, body.invite_token, identity)

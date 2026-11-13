@@ -3,3 +3,9 @@ export function driverInviteLink(origin: string, token: string) {
   const liff = process.env.NEXT_PUBLIC_LIFF_ID_DRIVER;
   return liff ? `https://liff.line.me/${liff}/join?t=${token}` : `${origin}/liff/driver/join?t=${token}`;
 }
+
+// QR สาธารณะ "สมัครเป็นคนขับ": เปิดใน LINE (LIFF) ถ้าตั้งค่าแล้ว ไม่งั้นหน้าเว็บตรง (local)
+export function driverApplyLink(origin: string) {
+  const liff = process.env.NEXT_PUBLIC_LIFF_ID_DRIVER;
+  return liff ? `https://liff.line.me/${liff}/apply` : `${origin}/liff/driver/apply`;
+}

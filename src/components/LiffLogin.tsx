@@ -78,13 +78,18 @@ export function LiffLogin({ app, liffId, devLogin }: { app: LiffApp; liffId?: st
     return (
       <div className="py-10 text-center text-muted">
         {error ? (
+          <>
           <p className="text-bad">
             {t.common.loginFailed(
               error === "DRIVER_NOT_INVITED" || error === "NOT_A_DRIVER"
-                ? "บัญชี LINE นี้ยังไม่ได้ลงทะเบียนเป็นคนขับ — เปิดลิงก์เชิญที่ได้รับจากเจ้าของก่อน"
+                ? "บัญชี LINE นี้ยังไม่ได้ลงทะเบียนเป็นคนขับ"
                 : error,
             )}
           </p>
+          {app === "driver" && (error === "DRIVER_NOT_INVITED" || error === "NOT_A_DRIVER") && (
+            <Link href="/liff/driver/apply" className={`${btnPrimary} mt-4`}>สมัครเป็นคนขับ</Link>
+          )}
+          </>
         ) : (
           t.common.signingIn
         )}

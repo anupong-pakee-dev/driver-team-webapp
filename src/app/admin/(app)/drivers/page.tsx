@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import QRCode from "qrcode";
+import { decryptField } from "@/lib/crypto";
+import { driverApplyLink } from "@/lib/links";
+import { formatBangkok } from "@/lib/time";
 import { requireStaffPage } from "@/lib/auth";
 import { asUser } from "@/lib/db";
 import { bangkokToday } from "@/services/compliance";
 import { driverEligibility } from "@/services/eligibility";
 import { Reasons } from "@/components/Reasons";
 import { Badge, Empty, Panel } from "@/components/ui";
-import { InviteForm } from "../actions";
+import { ApplicationActions, CopyText, InviteForm } from "../actions";
 
 const KYC_TONE = { approved: "ok", pending: "warn", rejected: "bad" } as const;
 const KYC_TH = { approved: "อนุมัติ", pending: "รอเอกสาร", rejected: "มีเอกสารไม่ผ่าน" } as const;
@@ -27,11 +32,60 @@ export default async function DriversPage() {
     elig: await driverEligibility(db, today),
   }));
 
+  // สมัครผ่าน QR สาธารณะ (เจ้าของเท่านั้น) — ลิงก์ + รูป QR สร้างฝั่งเซิร์ฟเวอร์ · ผู้สมัครที่รออนุมัติ
+  const isOwner = user.role === "owner";
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const applyLink = driverApplyLink(origin);
+  const qr = isOwner ? await QRCode.toDataURL(applyLink, { width: 480, margin: 2, color: { dark: "#1f2b26", light: "#ffffff" } }) : "";
+  const applications = isOwner ? (await asUser(user.authUserId, async (db) => (await db.query(
+    `select id, nickname, full_name_enc, phone_enc, created_at from driver_applications
+      where status = 'pending' order by created_at`)).rows)).map((a) => ({
+    id: a.id as string, nickname: a.nickname as string, created_at: a.created_at as string,
+    fullName: decryptField(a.full_name_enc), phone: decryptField(a.phone_enc),
+  })) : [];
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">คนขับ</h1>
-      {user.role === "owner" && (
-        <Panel title="เชิญคนขับใหม่">
+      {isOwner && (
+        <Panel title={`ผู้สมัครรออนุมัติ (${applications.length})`}>
+          {applications.length === 0 ? (
+            <Empty>ยังไม่มีผู้สมัครใหม่</Empty>
+          ) : (
+            <ul className="divide-y divide-line text-sm">
+              {applications.map((a) => (
+                <li key={a.id} className="flex flex-wrap items-center gap-3 py-2.5">
+                  <div className="min-w-48 flex-1">
+                    <div className="font-medium">{a.nickname} · {a.fullName}</div>
+                    <div className="text-xs text-muted">{a.phone} · สมัคร {formatBangkok(a.created_at)}</div>
+                  </div>
+                  <ApplicationActions id={a.id} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      )}
+      {isOwner && (
+        <Panel title="QR สมัครเป็นคนขับ">
+          <div className="flex flex-wrap items-start gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- data URL ที่สร้างฝั่งเซิร์ฟเวอร์ */}
+            <img src={qr} alt="QR สมัครเป็นคนขับ" width={176} height={176} className="rounded-xl border border-line" />
+            <div className="min-w-0 flex-1 space-y-2 text-sm">
+              <p>พิมพ์ติดหรือโพสต์ให้คนขับที่สนใจสแกน → ล็อกอิน LINE → กรอกชื่อและเบอร์ → ขึ้นในรายการรออนุมัติด้านบน</p>
+              <p className="break-all font-mono text-xs text-muted">{applyLink}</p>
+              <div className="flex flex-wrap gap-2">
+                <a href={qr} download="avera-driver-apply-qr.png" className="rounded-[var(--radius-btn)] bg-navy px-4 py-2 text-sm font-medium text-white">ดาวน์โหลด QR</a>
+                <CopyText text={applyLink} />
+              </div>
+              <p className="text-xs text-muted">อนุมัติแล้วคนขับยังต้องยอมรับสัญญา ส่งเอกสาร และผ่านการตรวจประวัติก่อนได้รับงาน</p>
+            </div>
+          </div>
+        </Panel>
+      )}
+      {isOwner && (
+        <Panel title="เชิญคนขับเฉพาะคน (ลิงก์ใช้ครั้งเดียว)">
           <InviteForm />
         </Panel>
       )}

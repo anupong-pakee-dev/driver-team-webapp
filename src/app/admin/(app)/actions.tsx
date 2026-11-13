@@ -216,3 +216,48 @@ export function RemoveDriver({ driverId, name }: { driverId: string; name: strin
     </div>
   );
 }
+
+/** เจ้าของอนุมัติ/ปฏิเสธผู้สมัครเป็นคนขับ (จาก QR สาธารณะ) */
+export function ApplicationActions({ id }: { id: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const REASONS: Record<string, string> = {
+    ALREADY_DRIVER: "LINE นี้เป็นคนขับอยู่แล้ว",
+    LINE_ALREADY_USED: "LINE นี้ใช้จองรถในฐานะลูกค้าแล้ว",
+    PHONE_IN_USE: "เบอร์นี้เป็นคนขับในระบบแล้ว",
+  };
+  async function decide(approve: boolean) {
+    let body: unknown;
+    if (!approve) {
+      const reason = window.prompt("เหตุผลที่ไม่ผ่าน (ผู้สมัครจะเห็นข้อความนี้)");
+      if (!reason || reason.trim().length < 3) return;
+      body = { reason };
+    }
+    setBusy(true);
+    setError(null);
+    const r = await call(`/api/admin/driver-applications/${id}/${approve ? "approve" : "reject"}`, "POST", body);
+    setBusy(false);
+    if (!r.ok) return setError(REASONS[r.json?.error?.details?.reason] ?? r.json?.error?.message_th ?? "ไม่สำเร็จ");
+    router.refresh();
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button className="rounded-lg bg-ok px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={busy} onClick={() => decide(true)}>
+        อนุมัติ
+      </button>
+      <button className="rounded-lg border border-line px-3 py-2 text-sm disabled:opacity-50" disabled={busy} onClick={() => decide(false)}>ไม่ผ่าน</button>
+      {error && <span className="text-sm text-bad">{error}</span>}
+    </div>
+  );
+}
+
+/** คัดลอกลิงก์สมัครคนขับ */
+export function CopyText({ text, label = "คัดลอกลิงก์" }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button type="button" className={btnSecondary} onClick={async () => { await navigator.clipboard.writeText(text); setCopied(true); }}>
+      {copied ? "คัดลอกแล้ว" : label}
+    </button>
+  );
+}

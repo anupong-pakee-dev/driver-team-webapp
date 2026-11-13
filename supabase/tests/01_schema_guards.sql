@@ -2,7 +2,7 @@
 begin;
 select plan(17);
 
-select is((select count(*)::int from pg_tables where schemaname = 'public'), 40, '40 tables (28 Req + 12 technical incl. driver_invites, staff_invites, route_cache, rate_limits, job_runs, page_views)');
+select is((select count(*)::int from pg_tables where schemaname = 'public'), 41, '41 tables (28 Req + 13 technical incl. driver_invites, staff_invites, driver_applications, route_cache, rate_limits, job_runs, page_views)');
 select is((select count(*)::int from pg_tables where schemaname = 'public' and not rowsecurity), 0, 'RLS enabled on every table');
 select is((select count(*)::int from booking_transitions), 15, 'booking_transitions seeded');
 

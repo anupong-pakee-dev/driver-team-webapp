@@ -414,6 +414,7 @@ export const en: Messages = {
       "ID, driving licence, bank account and vehicle documents — to check eligibility and pay you; files are stored privately.",
       "Background checks are stored only as “passed/failed” and the date.",
       "GPS location and photos are stored only at check-in during a job.",
+      "Driver applicants: we keep the nickname, full name, phone and LINE account to review the application; only the owner can see them.",
       "Legal basis: performing the contractor agreement and duties under transport and tax law. Bank details are used only to pay you.",
       "Retention: qualification documents are kept while you drive with us and deleted when you leave; job and payout history is kept 5 years under accounting/tax law.",
       "Drivers have the same PDPA rights as customers; contact the owner on LINE.",
