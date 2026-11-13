@@ -191,6 +191,7 @@ export const zh: Messages = {
   location: {
     gps: "📍 当前位置",
     pin: "🗺️ 在地图上标记",
+    pinHint: "搜索地点，或移动地图让标记对准位置",
     link: "🔗 粘贴 Google 地图链接",
     got: "✓ 已获取位置",
     viewMap: "在地图上查看",

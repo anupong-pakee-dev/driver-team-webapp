@@ -190,6 +190,7 @@ export const en: Messages = {
   location: {
     gps: "📍 My location",
     pin: "🗺️ Pin on map",
+    pinHint: "Search for a place, or move the map so the pin is on your spot",
     link: "🔗 Paste Google Maps link",
     got: "✓ Location set",
     viewMap: "View on map",

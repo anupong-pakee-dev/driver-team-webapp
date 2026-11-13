@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "./i18nContext";
 import { input as inputCls } from "./ui";
 
-// FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง 3 แบบ: GPS มือถือ · ปักหมุดบนแผนที่ (OSM) · วางลิงก์/พิกัดจาก Google Maps
+// FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง 2 แบบ: ตำแหน่งปัจจุบัน (GPS) · ปักหมุดบนแผนที่ (OSM + ค้นหาสถานที่) — ปุ่มปักหมุดใหญ่เด่น
 // ไม่มีค่าใช้จ่าย API · คนขับนำทางจากพิกัดนี้ · ช่องชื่อ = จุดสังเกตให้คนขับ
 
 export type PickedPlace = { lat: number; lng: number; name: string; source: "gps" | "pin" | "link" };
@@ -23,9 +23,7 @@ export function LocationInput({
   const { t } = useI18n();
   const L = t.location;
   const [mapOpen, setMapOpen] = useState(false);
-  const [linkOpen, setLinkOpen] = useState(false);
-  const [link, setLink] = useState("");
-  const [busy, setBusy] = useState<"gps" | "link" | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // ชื่อที่ระบบเติมให้ (ไม่ใช่ที่ลูกค้าพิมพ์เอง) → ย้ายจุดแล้วหาชื่อใหม่ได้
   const [autoNamed, setAutoNamed] = useState(false);
@@ -50,38 +48,20 @@ export function LocationInput({
 
   function useGps() {
     if (!navigator.geolocation) return setError(L.noGeo);
-    setBusy("gps");
+    setBusy(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setBusy(null);
+        setBusy(false);
         set({ lat: pos.coords.latitude, lng: pos.coords.longitude }, "gps");
       },
       (e) => {
-        setBusy(null);
+        setBusy(false);
         setError(({ 1: L.geoDenied, 2: L.geoUnavailable, 3: L.geoTimeout } as Record<number, string>)[e.code] ?? L.geoFailed);
       },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
     );
   }
 
-  async function useLink() {
-    if (!link.trim()) return;
-    setBusy("link");
-    const res = await fetch("/api/places/resolve-link", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ link }),
-    });
-    const out = await res.json().catch(() => null);
-    setBusy(null);
-    if (!res.ok) {
-      const problem = out?.error?.details?.problem;
-      return setError(problem === "outside_thailand" ? L.outside : L.linkFailed);
-    }
-    set(out, "link", value?.name || out.name);
-    setLinkOpen(false);
-    setLink("");
-  }
-
-  const chip = "rounded-full border border-line bg-card px-3 py-2 text-sm font-medium disabled:opacity-60";
 
   return (
     <fieldset className="space-y-2">
@@ -109,22 +89,16 @@ export function LocationInput({
             onChange={(e) => { edits.current++; setAutoNamed(false); onChange({ ...value, name: e.target.value }); }} />
         </div>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className={chip} onClick={useGps} disabled={busy === "gps"}>
-            {busy === "gps" ? L.locating : L.gps}
+        <div className="grid gap-2">
+          <button type="button" onClick={useGps} disabled={busy}
+            className="w-full rounded-[var(--radius-btn)] border border-line bg-card px-4 py-3 text-sm font-medium disabled:opacity-60">
+            {busy ? L.locating : L.gps}
           </button>
-          <button type="button" className={chip} onClick={() => setMapOpen(true)}>{L.pin}</button>
-          <button type="button" className={chip} onClick={() => setLinkOpen((v) => !v)} aria-expanded={linkOpen}>{L.link}</button>
-        </div>
-      )}
-
-      {linkOpen && !value && (
-        <div className="flex gap-2">
-          <input className={inputCls} value={link} onChange={(e) => setLink(e.target.value)} inputMode="url"
-            placeholder={L.linkPh} aria-label={L.linkLabel} />
-          <button type="button" className="shrink-0 rounded-[var(--radius-btn)] bg-navy px-4 text-sm font-medium text-white disabled:opacity-60"
-            onClick={useLink} disabled={busy === "link" || !link.trim()}>
-            {busy === "link" ? L.reading : L.useLink}
+          {/* ปักหมุด = ทางหลัก: ปุ่มใหญ่เด่น (ค้นหาสถานที่ได้ในแผนที่) */}
+          <button type="button" onClick={() => setMapOpen(true)}
+            className="flex w-full flex-col items-center gap-1 rounded-[var(--radius-card)] border-2 border-sage bg-sage-soft px-4 py-6 text-sage">
+            <span className="text-lg font-bold">{L.pin}</span>
+            <span className="text-xs font-medium text-muted">{L.pinHint}</span>
           </button>
         </div>
       )}

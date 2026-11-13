@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { BASE, closeDb, futurePickup, q } from "./helpers";
 
-// FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง (ไม่ใช้ API แผนที่): GPS + วางพิกัด/ลิงก์ → ใบเสนอราคามีพิกัด + ระยะประมาณ
+// FR-BOOK-01 ลูกค้าระบุตำแหน่งเอง 2 แบบ: ตำแหน่งปัจจุบัน (GPS) + ปักหมุดบนแผนที่ → ใบเสนอราคามีพิกัด + ระยะประมาณ
 test.afterAll(closeDb);
 
-test("customer sets pickup by GPS and drop-off by pasted coordinates", async ({ page, context }) => {
+test("customer sets pickup by GPS and drop-off by pinning on the map", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"], { origin: BASE });
   await context.setGeolocation({ latitude: 13.7462, longitude: 100.5347 }); // สยาม
 
@@ -19,20 +19,17 @@ test("customer sets pickup by GPS and drop-off by pasted coordinates", async ({ 
   await origin.getByRole("textbox").fill("หน้าสยามพารากอน ประตู 1");
 
   const dest = page.getByRole("group", { name: /ปลายทาง/ });
-  await dest.getByRole("button", { name: /วางลิงก์/ }).click();
-  await dest.getByRole("textbox", { name: /ลิงก์ Google Maps/ }).fill("https://www.google.com/maps/place/Pattaya/@12.9236,100.8825,13z");
-  await dest.getByRole("button", { name: "ใช้ลิงก์นี้" }).click();
-  await expect(dest.getByText("12.92360, 100.88250")).toBeVisible();
-  await expect(dest.getByRole("textbox")).toHaveValue("Pattaya");
-
-  // ลิงก์ที่ไม่มีพิกัด → แจ้งให้ใช้วิธีอื่น
-  await page.getByRole("button", { name: "+ เพิ่มจุดแวะ" }).click();
-  const stop = page.getByRole("group", { name: /จุดแวะ 1/ });
-  await stop.getByRole("button", { name: /วางลิงก์/ }).click();
-  await stop.getByRole("textbox", { name: /ลิงก์ Google Maps/ }).fill("https://www.google.com/maps/search/?api=1&query=Siam");
-  await stop.getByRole("button", { name: "ใช้ลิงก์นี้" }).click();
-  await expect(stop.getByRole("alert")).toContainText("อ่านพิกัดจากลิงก์นี้ไม่ได้");
-  await page.getByRole("button", { name: "ลบจุดแวะนี้" }).click();
+  // มีแค่ 2 ทางเลือก: ตำแหน่งปัจจุบัน + ปักหมุด (ไม่มีวางลิงก์แล้ว)
+  await expect(dest.getByRole("button")).toHaveCount(2);
+  await expect(dest.getByRole("button", { name: /วางลิงก์/ })).toHaveCount(0);
+  // ปักหมุด: เปิดแผนที่ → ปุ่มตำแหน่งในแผนที่พาไปพัทยา → ใช้ตำแหน่งนี้
+  await context.setGeolocation({ latitude: 12.9236, longitude: 100.8825 });
+  await dest.getByRole("button", { name: /ปักหมุดบนแผนที่/ }).click();
+  const map = page.getByRole("dialog");
+  await map.getByRole("button", { name: /ตำแหน่งปัจจุบัน/ }).click();
+  await expect(map.getByText(/12\.923\d\d, 100\.882\d\d/)).toBeVisible();
+  await map.getByRole("button", { name: "ใช้ตำแหน่งนี้" }).click();
+  await expect(dest.getByText(/12\.923\d\d, 100\.882\d\d/)).toBeVisible();
 
   await page.locator('input[name="pickup_at"]').fill(futurePickup(12).slice(0, 16));
   await page.getByRole("button", { name: "ขอใบเสนอราคา" }).click();
@@ -42,7 +39,8 @@ test("customer sets pickup by GPS and drop-off by pasted coordinates", async ({ 
   const [qt] = await q<{ origin: { name: string; lat: number; source: string }; destination: { lat: number; source: string }; distance_m: number; distance_source: string }>(
     `select origin, destination, distance_m, distance_source from quotes where id = $1`, [id]);
   expect(qt.origin).toMatchObject({ name: "หน้าสยามพารากอน ประตู 1", lat: 13.7462, source: "gps" });
-  expect(qt.destination).toMatchObject({ lat: 12.9236, source: "link" });
+  expect(qt.destination.source).toBe("pin");
+  expect(qt.destination.lat).toBeCloseTo(12.9236, 3);
   expect(qt.distance_source).toBe("estimate");
   expect(qt.distance_m).toBeGreaterThan(130_000); // สยาม → พัทยา เส้นตรง ~100 กม. × 1.35
   expect(qt.distance_m).toBeLessThan(160_000);
