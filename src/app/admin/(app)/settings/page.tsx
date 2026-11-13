@@ -7,6 +7,7 @@ import { SettingEditor } from "./editor";
 // FR-ADMIN-02 · ADR-10
 const LABELS: Record<string, string> = {
   deposit_pct: "สัดส่วนมัดจำ",
+  line_push: "แจ้งเตือน LINE ที่ส่ง (true = ส่ง · false = ไม่ส่ง ประหยัดโควตา) — quotes ใบเสนอราคา · offers ข้อเสนองาน · booking ยืนยันจอง/ได้คนขับ · reminders เตือนก่อนเดินทาง · job_closed ได้งาน/ปิดงาน · payments รับชำระ · cancellations ยกเลิก/คืนเงิน · trip_end ถึงที่หมาย · driver_admin เอกสารคนขับ · staff แจ้งเจ้าของ",
   deposit_window_minutes: "เวลาให้จ่ายมัดจำ (นาที)",
   admin_max_discount: "ส่วนลดสูงสุดที่แอดมินให้เองได้",
   commission_rate: "ค่าคอมมิชชั่น",

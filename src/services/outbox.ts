@@ -3,12 +3,18 @@ import { randomUUID } from "node:crypto";
 import { pool, type Db } from "@/lib/db";
 import { log } from "@/lib/redact";
 import * as line from "@/adapters/line/messaging";
+import { linePushAllowed } from "@/domain/linePush";
 
 // §11 Outbox: ผลข้างเคียงภายนอกเขียนใน transaction หลัก แล้ว worker ส่งทีหลัง (P7, ADR-05)
 
 export type Topic = "line.push" | "line.reply" | "meta.capi" | "google.dm";
 
 export async function enqueue(db: Db, topic: Topic, payload: Record<string, unknown>, dedupeKey?: string) {
+  // ประหยัดโควตา LINE: ประเภทที่ปิดไว้ใน settings.line_push ไม่ส่ง (ข้อมูลยังอยู่ในแอป/เว็บ)
+  if (topic === "line.push") {
+    const { rows } = await db.query(`select value from settings where key = 'line_push'`);
+    if (!linePushAllowed(dedupeKey, rows[0]?.value)) return;
+  }
   await db.query(
     `insert into outbox (topic, payload, dedupe_key) values ($1, $2, $3) on conflict (dedupe_key) do nothing`,
     [topic, { ...payload, retry_key: randomUUID() }, dedupeKey ?? null],
