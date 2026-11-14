@@ -10,7 +10,6 @@ import { Badge, Empty, Panel, btnPrimary } from "@/components/ui";
 import { DriverLoginScreen, DriverShell } from "./shell";
 import { driverPage } from "./session";
 import { OfferActions } from "./offers";
-import { AcceptingSwitch } from "./onoff";
 import { navLinks } from "@/domain/geo";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +31,7 @@ export default async function DriverHome() {
 
   const [status, offers, jobs, commission] = await Promise.all([
     asUser(user.authUserId, async (db) => {
-      const d = await db.query(`select kyc_status, score, accepting_jobs from drivers where user_id = $1`, [user.id]);
+      const d = await db.query(`select kyc_status, score from drivers where user_id = $1`, [user.id]);
       const v = await db.query(`select count(*)::int as n, count(*) filter (where kyc_status = 'approved')::int as ok from vehicles`);
       const slots = await docSlots(db, "driver", user.id);
       return { driver: d.rows[0], vehicles: v.rows[0], missing: slots.filter((s) => s.required && !s.approved).length };
@@ -53,7 +52,6 @@ export default async function DriverHome() {
       subtitle="งานของฉัน"
       active="home"
       columns={2}
-      extra={<AcceptingSwitch on={status.driver?.accepting_jobs ?? true} />}
     >
       {/* 2a: ข้อเสนองานใหม่เป็นการ์ดสีเข้ม — ค่างานเด่น ปุ่มรับงานกว้างกว่าปุ่มปฏิเสธ */}
       {pending.map((o) => (
