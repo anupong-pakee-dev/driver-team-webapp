@@ -12,12 +12,12 @@ select throws_ok($$ update driver_applications set status = 'rejected' where lin
   '23514', null, 'rejecting needs a reason');
 
 select tests.act_as('00000000-0000-0000-0000-0000000000a1');
-select is((select count(*)::int from driver_applications), 1, 'owner reads applications');
+select is((select count(*)::int from driver_applications where line_user_id = 'Uapply-1'), 1, 'owner reads applications');
 select throws_ok($$ update driver_applications set status = 'approved' $$, '42501', null, 'owner cannot write applications directly');
 select tests.reset_role();
 
 select tests.act_as('00000000-0000-0000-0000-0000000000a2');
-select is((select count(*)::int from driver_applications), 0, 'sales_admin cannot read applications');
+select is((select count(*)::int from driver_applications where line_user_id = 'Uapply-1'), 0, 'sales_admin cannot read applications');
 select tests.reset_role();
 
 select tests.act_as_anon();

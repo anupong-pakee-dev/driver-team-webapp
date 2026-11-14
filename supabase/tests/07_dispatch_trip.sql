@@ -27,9 +27,9 @@ select is(assignment_problems('00000000-0000-0000-0000-0000000000b1', '00000000-
           array['vehicle_mismatch'], 'cannot use another driver''s vehicle');
 
 -- เอกสารหมดก่อนวันงาน → ไม่ได้ข้อเสนอ (BR-COMP-04)
-update vehicles set tax_expiry = current_date + 1 where id = '00000000-0000-0000-0000-0000000000e1';
+update vehicles set compulsory_insurance_expiry = current_date + 1 where id = '00000000-0000-0000-0000-0000000000e1';
 select is((select count(*)::int from dispatch_candidates('00000000-0000-0000-0000-0000000000b1') where driver_id in ('00000000-0000-0000-0000-0000000000d1','00000000-0000-0000-0000-0000000000d2')), 0, 'expires before job date → no candidate');
-update vehicles set tax_expiry = current_date + 30 where id = '00000000-0000-0000-0000-0000000000e1';
+update vehicles set compulsory_insurance_expiry = current_date + 30 where id = '00000000-0000-0000-0000-0000000000e1';
 
 
 -- ปิดปฏิทินชนเวลางาน → ไม่ว่าง

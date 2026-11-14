@@ -133,7 +133,7 @@ export async function addVehicle(user: SessionUser, v: VehicleInput) {
   return withTx({ userId: user.id, role: user.role, reason: "add vehicle" }, async (db) => {
     const dup = await db.query(`select 1 from vehicles where plate = upper(regexp_replace($1, '\\s+', '', 'g'))`, [v.plate]);
     if (dup.rows[0]) throw new BizError("VALIDATION", { field: "plate", problem: "duplicate" });
-    // registration_type มาจากเล่มทะเบียนตอน owner อนุมัติ — ระหว่างนี้ใช้ค่าว่าง (ไม่อยู่ใน allowed_registrations)
+    // registration_type มาจาก พ.ร.บ. (หรือเล่มทะเบียน) ตอน owner อนุมัติ — ระหว่างนี้ใช้ค่าว่าง (ไม่อยู่ใน allowed_registrations)
     const { rows } = await db.query(
       `insert into vehicles (driver_id, car_type, plate, seats, luggage, registration_type)
        values ($1, $2, $3, $4, $5, '') returning id`,

@@ -61,3 +61,18 @@ describe("reminderDue (FR-VEH-05)", () => {
     ["2026-11-01", "2026-11-01", null],
   ])("expires %s, today %s → %s", (exp, today, out) => expect(reminderDue(exp, today, days)).toBe(out));
 });
+
+describe("simplified documents", () => {
+  const allowed = { registration_types: ["ry6", "ry1"], license_classes: ["car_public"] };
+  it("compulsory insurance carries the registration type, which approval copies to the vehicle", () => {
+    const out = parseDocData(docType("compulsory_ins")!, { registration_type: "ry6", expiry: "2027-03-01" }, allowed);
+    expect(out.data).toEqual({ registration_type: "ry6", expiry: "2027-03-01" });
+    expect(approvalPatch("compulsory_ins", out.data, {})).toEqual({ compulsory_insurance_expiry: "2027-03-01", registration_type: "ry6" });
+  });
+  it("only fields that decide eligibility or payouts are required", () => {
+    expect(() => parseDocData(docType("public_license")!, { license_class: "car_public", expiry: "2027-05-01" }, allowed)).not.toThrow();
+    expect(() => parseDocData(docType("voluntary_ins")!, { usage: "commercial_hire", expiry: "2027-01-01" }, allowed)).not.toThrow();
+    expect(() => parseDocData(docType("bank_book")!, { bank_name: "กสิกรไทย" }, allowed)).toThrow(DocDataError);
+    expect(() => parseDocData(docType("bank_book")!, { bank_name: "ไม่มีธนาคารนี้", account_no: "123" }, allowed)).toThrow(DocDataError);
+  });
+});

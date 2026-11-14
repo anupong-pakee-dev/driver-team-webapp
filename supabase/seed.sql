@@ -15,8 +15,8 @@ insert into settings (key, value) values
   ('far_from_target_m',        '500'),
   ('cancellation_policy',      '{"full_refund_hours":48,"mid":{"refundPct":50,"driverPct":25},"late":{"driverPct":50},"noShowDriverPct":50}'),
   ('compliance',               '{"bg_check_valid_years":null,"doc_reminder_days":[30,7,1],"invite_ttl_hours":72,
-                                 "required_docs":{"driver":["id_card","public_license","selfie_with_id","bank_book"],
-                                                  "vehicle":["registration_book","compulsory_ins","voluntary_ins","passenger_ins","tax_receipt","inspection","vehicle_photo"]}}'),
+                                 "required_docs":{"driver":["id_card","public_license","bank_book"],
+                                 "vehicle":["compulsory_ins","voluntary_ins"]}}'),
   -- ❓ รายการต้องยืนยันกับ ขบ. (T1) — ใช้เป็นตัวเลือกในฟอร์ม · การอนุญาตจริงอยู่ที่ allowed_registrations / license_coverage
   ('registration_types', '[
      {"code":"ry1","label_th":"รย.1 รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน"},

@@ -2,6 +2,9 @@
 begin;
 select plan(8);
 select tests.make_fixtures();
+-- ทดสอบแบบบังคับเอกสารรถครบทุกอย่าง (ค่าเริ่มต้นปัจจุบันบังคับแค่ พ.ร.บ. + ภาคสมัครใจ — ดูเทสต์ท้ายไฟล์)
+update settings set value = jsonb_set(value, '{required_docs,vehicle}',
+  '["registration_book","compulsory_ins","voluntary_ins","passenger_ins","tax_receipt","inspection","vehicle_photo"]') where key = 'compliance';
 
 -- ไม่มีอะไรเลย → ไม่ eligible พร้อมเหตุผลครบ
 select set_eq(

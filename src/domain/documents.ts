@@ -30,21 +30,28 @@ export const INSURANCE_USAGE = [
   { value: "private", label: "ส่วนบุคคล (รับงานไม่ได้)" },
 ];
 
+// ธนาคารที่ใช้บ่อย (เลือกง่ายกว่าพิมพ์) · "อื่น ๆ" ให้เจ้าของดูจากรูปสมุดบัญชี
+export const THAI_BANKS = [
+  "กสิกรไทย", "ไทยพาณิชย์", "กรุงเทพ", "กรุงไทย", "กรุงศรีอยุธยา", "ทหารไทยธนชาต (ttb)", "ออมสิน", "ธ.ก.ส.", "ซีไอเอ็มบี ไทย",
+  "ยูโอบี", "เกียรตินาคินภัทร", "แลนด์ แอนด์ เฮ้าส์", "อาคารสงเคราะห์ (ธอส.)", "อื่น ๆ",
+].map((b) => ({ value: b, label: b }));
+
+// ช่องที่บังคับ = เฉพาะที่ระบบใช้ตัดสินสิทธิ์รับงาน/จ่ายเงิน · ที่เหลือไม่บังคับ (เจ้าของดูจากรูปเอกสารได้)
 export const DOC_TYPES: DocType[] = [
   { type: "id_card", owner: "driver", label: "บัตรประชาชน", fields: [] },
   {
     type: "public_license", owner: "driver", label: "ใบขับขี่สาธารณะ", expiryField: "expiry",
     fields: [
-      { key: "license_no", label: "เลขที่ใบขับขี่", type: "secret", required: true },
       { key: "license_class", label: "ประเภทใบขับขี่", type: "select", required: true, options: "license_classes" },
       { key: "expiry", label: "วันหมดอายุ", type: "date", required: true },
+      { key: "license_no", label: "เลขที่ใบขับขี่", type: "secret", required: false },
     ],
   },
   { type: "selfie_with_id", owner: "driver", label: "รูปถ่ายคู่บัตรประชาชน", hint: "ถือบัตรข้างหน้า เห็นหน้าและบัตรชัด", fields: [] },
   {
     type: "bank_book", owner: "driver", label: "หน้าสมุดบัญชีธนาคาร",
     fields: [
-      { key: "bank_name", label: "ธนาคาร", type: "text", required: true },
+      { key: "bank_name", label: "ธนาคาร", type: "select", required: true, options: THAI_BANKS },
       { key: "account_no", label: "เลขบัญชี", type: "secret", required: true },
     ],
   },
@@ -55,16 +62,21 @@ export const DOC_TYPES: DocType[] = [
       { key: "owner_name", label: "ชื่อผู้ถือกรรมสิทธิ์", type: "text", required: true },
     ],
   },
+  // ประเภทจดทะเบียนถามที่ พ.ร.บ. (เอกสารบังคับ) — ใบ พ.ร.บ. ระบุประเภทรถ เจ้าของตรวจเทียบได้ · เล่มทะเบียนไม่บังคับแล้ว
   { type: "compulsory_ins", owner: "vehicle", label: "พ.ร.บ.", expiryField: "expiry",
-    fields: [{ key: "expiry", label: "วันหมดอายุ", type: "date", required: true }] },
+    hint: "เลือกประเภทจดทะเบียนตามป้าย/เล่มทะเบียนของรถ (รถส่วนบุคคลรับงานไม่ได้)",
+    fields: [
+      { key: "registration_type", label: "ประเภทจดทะเบียนรถ", type: "select", required: true, options: "registration_types" },
+      { key: "expiry", label: "วันหมดอายุ พ.ร.บ.", type: "date", required: true },
+    ] },
   {
     type: "voluntary_ins", owner: "vehicle", label: "ประกันภาคสมัครใจ", expiryField: "expiry",
     fields: [
-      { key: "insurer", label: "บริษัทประกัน", type: "text", required: true },
-      { key: "policy_no", label: "เลขกรมธรรม์", type: "text", required: true },
-      { key: "usage", label: "ประเภทการใช้รถ", type: "select", required: true, options: INSURANCE_USAGE },
+      { key: "usage", label: "ประเภทการใช้รถ (ตามกรมธรรม์)", type: "select", required: true, options: INSURANCE_USAGE },
       { key: "expiry", label: "วันหมดอายุ", type: "date", required: true },
-      { key: "claim_phone", label: "เบอร์แจ้งเคลม", type: "phone", required: true },
+      { key: "insurer", label: "บริษัทประกัน", type: "text", required: false },
+      { key: "policy_no", label: "เลขกรมธรรม์", type: "text", required: false },
+      { key: "claim_phone", label: "เบอร์แจ้งเคลม", type: "phone", required: false },
     ],
   },
   {
@@ -150,7 +162,7 @@ export function approvalPatch(type: string, data: Record<string, unknown>, secre
     case "registration_book":
       return { registration_type: data.registration_type, owner_name: data.owner_name };
     case "compulsory_ins":
-      return { compulsory_insurance_expiry: data.expiry };
+      return { compulsory_insurance_expiry: data.expiry, registration_type: data.registration_type };
     case "voluntary_ins":
       return {
         voluntary_insurer: data.insurer, voluntary_policy_no: data.policy_no, voluntary_insurance_usage: data.usage,

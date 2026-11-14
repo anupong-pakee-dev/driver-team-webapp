@@ -62,41 +62,50 @@ export function DocUploader({
     router.refresh();
   }
 
+  const renderField = (field: DocType["fields"][number]) => {
+    const opts = Array.isArray(field.options)
+      ? field.options.map((o) => ({ code: o.value, label_th: o.label }))
+      : field.options ? options[field.options] : null;
+    return (
+      <label key={field.key} className="block space-y-1">
+        <span className="text-sm font-medium">
+          {field.label}
+          {field.required && <span className="text-bad"> *</span>}
+        </span>
+        {opts ? (
+          <select name={field.key} required={field.required} className={input} defaultValue="">
+            <option value="" disabled={field.required}>{field.required ? "เลือก…" : "ไม่ระบุ"}</option>
+            {opts.map((o) => <option key={o.code} value={o.code}>{o.label_th}</option>)}
+          </select>
+        ) : (
+          <input
+            name={field.key}
+            required={field.required}
+            className={input}
+            type={field.type === "date" ? "date" : field.type === "money" ? "number" : field.type === "phone" ? "tel" : "text"}
+            inputMode={field.type === "money" || field.type === "secret" ? "numeric" : undefined}
+            autoComplete="off"
+          />
+        )}
+      </label>
+    );
+  };
+
   return (
     <form onSubmit={submit} className="mt-3 space-y-3 rounded-xl bg-page p-3">
       {def.hint && <p className="text-sm text-muted">{def.hint}</p>}
-      {def.fields.map((field) => {
-        const opts = Array.isArray(field.options)
-          ? field.options.map((o) => ({ code: o.value, label_th: o.label }))
-          : field.options ? options[field.options] : null;
-        return (
-          <label key={field.key} className="block space-y-1">
-            <span className="text-sm font-medium">
-              {field.label}
-              {field.required && <span className="text-bad"> *</span>}
-            </span>
-            {opts ? (
-              <select name={field.key} required={field.required} className={input} defaultValue="">
-                <option value="" disabled>เลือก…</option>
-                {opts.map((o) => <option key={o.code} value={o.code}>{o.label_th}</option>)}
-              </select>
-            ) : (
-              <input
-                name={field.key}
-                required={field.required}
-                className={input}
-                type={field.type === "date" ? "date" : field.type === "money" ? "number" : field.type === "phone" ? "tel" : "text"}
-                inputMode={field.type === "money" || field.type === "secret" ? "numeric" : undefined}
-                autoComplete="off"
-              />
-            )}
-          </label>
-        );
-      })}
+      {def.fields.filter((f) => f.required).map(renderField)}
       <label className="block space-y-1">
-        <span className="text-sm font-medium">ไฟล์ (รูปหรือ PDF ≤ 10 MB) <span className="text-bad">*</span></span>
+        <span className="text-sm font-medium">รูปเอกสาร (ถ่ายรูปหรือเลือกไฟล์) <span className="text-bad">*</span></span>
         <input name="file" type="file" required accept="image/jpeg,image/png,image/webp,application/pdf" className="block w-full text-sm" />
+        <span className="block text-xs text-muted">รูปหรือ PDF ไม่เกิน 10 MB · ถ่ายให้เห็นตัวหนังสือชัด</span>
       </label>
+      {def.fields.some((f) => !f.required) && (
+        <details className="rounded-lg border border-line bg-card px-3 py-2">
+          <summary className="cursor-pointer text-sm text-muted">กรอกข้อมูลเพิ่มเติม (ไม่บังคับ)</summary>
+          <div className="mt-2 space-y-3">{def.fields.filter((f) => !f.required).map(renderField)}</div>
+        </details>
+      )}
       {error && <p className="text-sm text-bad">{error}</p>}
       <div className="flex gap-2">
         <button className={btnPrimary} disabled={busy}>{busy ? "กำลังส่ง…" : "ส่งให้ตรวจ"}</button>
